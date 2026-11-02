@@ -6,8 +6,8 @@ and a flip-card detail view for every note.
 ## Live on GitHub Pages — no commands needed
 
 Every push to `main` is built and published automatically by
-`.github/workflows/deploy.yml`. Editing a file on github.com (for example
-`src/data/items.js`) is enough: about a minute later the site is updated.
+`.github/workflows/deploy.yml`. Editing a file on github.com is enough:
+about a minute later the site is updated.
 
 **One-time setup:** repo **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 The site is then at `https://idkmanlool9.github.io/geld/`.
@@ -32,4 +32,4 @@ Then open http://localhost:5173.
 Open a terminal in this folder and run `claude`. `CLAUDE.md` explains the structure,
 the data rules and what to build next.
 
-The collection itself lives in `src/data/items.js`.
+The collection starts empty: add pieces in the app. They are stored on the device; use **Export backup** on the overview to keep a copy.

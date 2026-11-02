@@ -9,7 +9,7 @@ const PEEK = [
 
 /** The yellow folder tile. `items` peek out of the top (the three most valuable). */
 export function FolderGraphic({ items = [], cc, icon, badge }) {
-  const top = [...items].sort((a, b) => b.hi - a.hi).slice(0, 3)
+  const top = [...items].sort((a, b) => (b.hi || 0) - (a.hi || 0)).slice(0, 3)
   return (
     <div className="folder-graphic">
       <svg viewBox="0 0 130 100" preserveAspectRatio="none" className="folder-back" aria-hidden="true">
@@ -47,9 +47,9 @@ export default function Folder({ name, meta, onClick, ...graphic }) {
   )
 }
 
-export function NewFolder() {
+export function NewFolder({ onClick }) {
   return (
-    <button type="button" className="folder">
+    <button type="button" className="folder" onClick={onClick}>
       <div className="folder-graphic folder-new">
         <Icon name="plus" size={28} />
       </div>

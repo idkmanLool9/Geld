@@ -23,7 +23,7 @@ function Summary({ list, showValues }) {
       <div className="card summary-tile">
         <span className="muted small">Pieces</span>
         <span className="summary-value">{st.pieces}</span>
-        <span className="muted small">{st.stack ? '+ unsorted stack of 30–60' : 'Loose pieces'}</span>
+        <span className="muted small">{plural(list.length, 'entry', 'entries')}</span>
       </div>
       <div className="card summary-tile">
         <span className="muted small">Countries</span>
@@ -34,13 +34,13 @@ function Summary({ list, showValues }) {
         <>
           <div className="card summary-tile">
             <span className="muted small">Estimated value</span>
-            <span className="summary-value">{range(st.lo, st.hi)}</span>
-            <span className="muted small">Collector prices, circulated</span>
+            <span className="summary-value">{st.hi > 0 ? range(st.lo, st.hi) : '—'}</span>
+            <span className="muted small">{st.valued < st.pieces ? `${plural(st.valued, 'piece')} valued` : 'Your estimates'}</span>
           </div>
           <div className="card summary-tile">
             <span className="muted small">Still exchangeable</span>
             <span className="summary-value">{eur(st.face)}</span>
-            <span className="muted small">{plural(st.faceN, 'note')} at a central bank</span>
+            <span className="muted small">{plural(st.faceN, 'piece')} marked exchangeable</span>
           </div>
         </>
       )}
@@ -54,13 +54,13 @@ function Card({ it, selected, fav, showValues, onSelect }) {
       <NoteArt item={it} />
       <span className="item-text">
         <span className="item-name">
-          {it.denom} {it.unit}
+          {[it.denom, it.unit].filter(Boolean).join(' ') || 'Untitled'}
           {fav && <Icon name="star" size={14} fill="#E8890C" stroke={0} role="img" aria-label="Favorite" aria-hidden={undefined} />}
         </span>
         <span className="item-sub">
           <Flag cc={it.cc} width={16} height={11} radius={2} />
           <span className="ellipsis">
-            {it.country} · {it.series}
+            {[it.country, it.series || it.year].filter(Boolean).join(' · ') || '—'}
           </span>
         </span>
       </span>
@@ -94,19 +94,17 @@ function Table({ list, sel, showValues, onSelect }) {
               <td>
                 <button type="button" className="row-button" onClick={() => onSelect(it.id)}>
                   <span className={it.type === 'coin' ? 'thumb thumb-coin' : 'thumb'} style={{ background: it.color }} />
-                  <span className="strong">
-                    {it.denom} {it.unit}
-                  </span>
+                  <span className="strong">{[it.denom, it.unit].filter(Boolean).join(' ') || 'Untitled'}</span>
                 </button>
               </td>
               <td>
                 <span className="inline-flag">
                   <Flag cc={it.cc} width={20} height={14} />
-                  {it.country}
+                  {it.country || '—'}
                 </span>
               </td>
-              <td className="muted">{it.year}</td>
-              <td className="muted">{it.stack || it.qty}</td>
+              <td className="muted">{it.year || '—'}</td>
+              <td className="muted">{it.qty}</td>
               <td>
                 <StatusPill status={it.status} />
               </td>
@@ -119,7 +117,7 @@ function Table({ list, sel, showValues, onSelect }) {
   )
 }
 
-export default function ItemsView({ view, list, type, setType, sort, setSort, layout, setLayout, sel, select, favs, showValues, children }) {
+export default function ItemsView({ view, list, type, setType, sort, setSort, layout, setLayout, sel, select, showValues, query, onAdd, total, children }) {
   const empty = list.length === 0
   return (
     <>
@@ -143,6 +141,7 @@ export default function ItemsView({ view, list, type, setType, sort, setSort, la
             <option value="value">Value</option>
             <option value="country">Country</option>
             <option value="year">Year</option>
+            <option value="added">Recently added</option>
           </select>
         </label>
         <Segmented
@@ -164,17 +163,29 @@ export default function ItemsView({ view, list, type, setType, sort, setSort, la
               <div className="empty-folder">
                 <FolderGraphic />
               </div>
-              <span className="empty-title">{view === 'favorites' ? 'No favorites yet' : 'Nothing here'}</span>
-              <span className="muted">
-                {view === 'favorites'
-                  ? 'Open any note and tap the star to keep it here.'
-                  : 'No pieces match this view. Try another folder, or clear the search.'}
+              <span className="empty-title">
+                {total === 0 ? 'Your collection is empty' : view === 'favorites' && !query ? 'No favorites yet' : view.startsWith('folder:') && !query ? 'This folder is empty' : 'Nothing here'}
               </span>
+              <span className="muted">
+                {total === 0
+                  ? 'Add your first banknote or coin to get started.'
+                  : view === 'favorites' && !query
+                    ? 'Open any piece and tap the star to keep it here.'
+                    : view.startsWith('folder:') && !query
+                      ? 'Open a piece, tap Edit and tick this folder to add it.'
+                      : 'No pieces match this view. Try another type, or clear the search.'}
+              </span>
+              {total === 0 && (
+                <button type="button" className="primary-btn" onClick={onAdd}>
+                  <Icon name="plus" size={16} stroke={2.2} />
+                  Add item
+                </button>
+              )}
             </div>
           ) : layout === 'grid' ? (
             <div className="item-grid">
               {list.map((it) => (
-                <Card key={it.id} it={it} selected={sel === it.id} fav={!!favs[it.id]} showValues={showValues} onSelect={() => select(it.id)} />
+                <Card key={it.id} it={it} selected={sel === it.id} fav={!!it.fav} showValues={showValues} onSelect={() => select(it.id)} />
               ))}
             </div>
           ) : (

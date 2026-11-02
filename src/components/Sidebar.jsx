@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import Icon from './Icon.jsx'
 import Flag from './Flag.jsx'
-import { countBadge } from '../lib/collection.js'
 
 function NavItem({ icon, label, count, active, onClick, children }) {
   return (
@@ -13,7 +12,7 @@ function NavItem({ icon, label, count, active, onClick, children }) {
   )
 }
 
-export default function Sidebar({ view, go, counts, countries }) {
+export default function Sidebar({ view, go, counts, folders, folderCounts, countries, onNewFolder }) {
   const [more, setMore] = useState(false)
   const shown = more ? countries : countries.slice(0, 8)
   const lib = [
@@ -22,12 +21,6 @@ export default function Sidebar({ view, go, counts, countries }) {
     { key: 'notes', icon: 'note', label: 'Banknotes', count: counts.notes },
     { key: 'coins', icon: 'coin', label: 'Coins', count: counts.coins },
     { key: 'favorites', icon: 'star', label: 'Favorites', count: counts.favorites },
-  ]
-  const folders = [
-    { key: 'highlights', icon: 'gem', label: 'Highlights', count: counts.highlights },
-    { key: 'exchangeable', icon: 'swap', label: 'Still exchangeable', count: counts.exchangeable },
-    { key: 'identify', icon: 'search', label: 'To identify', count: counts.identify },
-    { key: 'lots', icon: 'box', label: 'Lot material', count: counts.lots },
   ]
 
   return (
@@ -51,28 +44,37 @@ export default function Sidebar({ view, go, counts, countries }) {
 
       <div className="nav-group">
         <span className="nav-heading">Folders</span>
-        {folders.map((n) => (
-          <NavItem key={n.key} {...n} active={view === n.key} onClick={() => go(n.key)} />
-        ))}
-      </div>
-
-      <div className="nav-group">
-        <span className="nav-heading">Countries</span>
-        {shown.map((c) => (
+        {folders.map((f) => (
           <NavItem
-            key={c.cc}
-            label={c.name}
-            count={countBadge(c)}
-            active={view === 'country:' + c.cc}
-            onClick={() => go('country:' + c.cc)}
-          >
-            <Flag cc={c.cc} width={22} height={15} />
-          </NavItem>
+            key={f.id}
+            icon="folder"
+            label={f.name}
+            count={folderCounts[f.id] || 0}
+            active={view === 'folder:' + f.id}
+            onClick={() => go('folder:' + f.id)}
+          />
         ))}
-        <button type="button" className="nav-more" onClick={() => setMore(!more)}>
-          {more ? 'Show fewer' : `Show all ${countries.length}`}
+        <button type="button" className="nav-more nav-new" onClick={onNewFolder}>
+          <Icon name="plus" size={15} stroke={2.2} />
+          New folder
         </button>
       </div>
+
+      {countries.length > 0 && (
+        <div className="nav-group">
+          <span className="nav-heading">Countries</span>
+          {shown.map((c) => (
+            <NavItem key={c.key} label={c.name} count={c.pieces} active={view === 'country:' + c.key} onClick={() => go('country:' + c.key)}>
+              <Flag cc={c.cc} width={22} height={15} />
+            </NavItem>
+          ))}
+          {countries.length > 8 && (
+            <button type="button" className="nav-more" onClick={() => setMore(!more)}>
+              {more ? 'Show fewer' : `Show all ${countries.length}`}
+            </button>
+          )}
+        </div>
+      )}
     </nav>
   )
 }

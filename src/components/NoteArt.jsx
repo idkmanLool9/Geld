@@ -7,7 +7,7 @@ export default function NoteArt({ item, side = 'front', size = 'card' }) {
   if (photo) {
     return (
       <div className={`art art-${size} art-photo`}>
-        <img src={photo} alt={`${item.denom} ${item.unit}, ${side}`} />
+        <img src={photo} alt={`${item.denom || ''} ${item.unit || ''}, ${side}`.trim()} />
       </div>
     )
   }
@@ -16,20 +16,20 @@ export default function NoteArt({ item, side = 'front', size = 'card' }) {
     return (
       <div className={`art art-${size} art-coin-bg`}>
         <div className="coin" style={{ background: item.color }}>
-          {side === 'front' ? item.denom : <span className="coin-back">Reverse not photographed yet</span>}
+          {side === 'front' ? item.denom || '?' : <span className="coin-back">{item.back || 'No photo of the reverse yet'}</span>}
         </div>
       </div>
     )
   }
 
-  const qtyLabel = item.stack ? `${item.stack} notes` : item.qty > 1 ? `×${item.qty}` : null
+  const qtyLabel = item.qty > 1 ? `×${item.qty}` : null
 
   if (side === 'back') {
     return (
       <div className={`art art-${size} note note-back`} style={{ backgroundColor: item.color }}>
         <div className="note-frame" />
-        <div className="note-motif">{item.back || 'Back not photographed yet'}</div>
-        <div className="note-denom note-denom-left">{item.denom}</div>
+        <div className="note-motif">{item.back || 'No photo of the back yet'}</div>
+        <div className="note-denom note-denom-left">{item.denom || '?'}</div>
       </div>
     )
   }
@@ -41,7 +41,7 @@ export default function NoteArt({ item, side = 'front', size = 'card' }) {
       <div className="note-portrait" />
       <div className="note-watermark" />
       <div className="note-country">{item.country}</div>
-      <div className="note-denom">{item.denom}</div>
+      <div className="note-denom">{item.denom || '?'}</div>
       <div className="note-unit">{item.unit}</div>
       {size === 'card' && qtyLabel && <span className="note-qty">{qtyLabel}</span>}
     </div>

@@ -1,60 +1,64 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Sidebar from './components/Sidebar.jsx'
 import Overview from './components/Overview.jsx'
 import ItemsView from './components/ItemsView.jsx'
 import DetailPanel from './components/DetailPanel.jsx'
+import ItemForm from './components/ItemForm.jsx'
+import FolderDialog from './components/FolderDialog.jsx'
 import Flag from './components/Flag.jsx'
 import Icon from './components/Icon.jsx'
-import { ITEMS, YEAR_MIN, YEAR_MAX } from './data/items.js'
-import { CURRENCY, FOLDER_NAMES } from './data/meta.js'
-import { filterItems, getCountries, inFolder, sumUp, typeForView } from './lib/collection.js'
+import { filterItems, getCountries, inFolder, prepare, sumUp, typeForView } from './lib/collection.js'
 import { plural } from './lib/format.js'
+import * as store from './lib/store.js'
 
 // Show estimated values everywhere. Flip to false for a "values hidden" mode.
 const SHOW_VALUES = true
 
-const TITLES = {
-  home: 'My Collection',
-  all: 'All items',
-  notes: 'Banknotes',
-  coins: 'Coins',
-  favorites: 'Favorites',
-  ...FOLDER_NAMES,
-}
-const SUBTITLES = {
-  highlights: 'The eight notes that carry about half of the total value.',
-  exchangeable: 'Notes a central bank still swaps for real money.',
-  identify: 'Open questions — a sharper photo settles most of them.',
-  lots: 'Low-value pieces: sell grouped per country, never one by one.',
-  favorites: 'The pieces you starred.',
-}
+const TITLES = { home: 'My Collection', all: 'All items', notes: 'Banknotes', coins: 'Coins', favorites: 'Favorites' }
 
-const readHash = () => decodeURIComponent(window.location.hash.slice(1)) || 'home'
-
-function loadFavs() {
+const readHash = () => {
   try {
-    return JSON.parse(localStorage.getItem('collection-favs') || '{}') || {}
+    return decodeURIComponent(window.location.hash.slice(1)) || 'home'
   } catch {
-    return {}
+    return 'home'
   }
 }
 
 export default function App() {
+  const [items, setItems] = useState([])
+  const [folders, setFolders] = useState(store.loadFolders)
+  const [loaded, setLoaded] = useState(false)
+  const [loadError, setLoadError] = useState('')
+
   const [view, setView] = useState(readHash)
   const [type, setType] = useState(typeForView(readHash()))
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('value')
   const [layout, setLayout] = useState('grid')
   const [sel, setSel] = useState(null)
-  const [favs, setFavs] = useState(loadFavs)
+
+  const [editing, setEditing] = useState(null) // null | 'new' | item
+  const [folderDialog, setFolderDialog] = useState(null) // null | 'new' | folder
+
+  useEffect(() => {
+    store
+      .loadItems()
+      .then((its) => setItems(its.map(prepare)))
+      .catch(() => setLoadError('This browser blocks storage, so pieces cannot be saved here (private browsing?).'))
+      .finally(() => setLoaded(true))
+    store.requestPersistence()
+  }, [])
 
   // Keep the view in the URL hash so refresh / back button work.
+  const viewRef = useRef(view)
   useEffect(() => {
+    viewRef.current = view
     if (readHash() !== view) window.location.hash = view
   }, [view])
   useEffect(() => {
     const onHash = () => {
       const v = readHash()
+      if (v === viewRef.current) return // our own hash update, not back/forward
       setView(v)
       setType(typeForView(v))
       setSel(null)
@@ -67,25 +71,8 @@ export default function App() {
     setView(v)
     setType(typeForView(v))
     setSel(null)
-    if (v === 'home') setQuery('')
-    window.scrollTo({ top: 0 })
-  }
-  const open = (v, id) => {
-    setView(v)
-    setType('all')
     setQuery('')
-    setSel(id)
-  }
-  const toggleFav = (id) => {
-    const next = { ...favs }
-    if (next[id]) delete next[id]
-    else next[id] = true
-    setFavs(next)
-    try {
-      localStorage.setItem('collection-favs', JSON.stringify(next))
-    } catch {
-      /* storage unavailable */
-    }
+    window.scrollTo({ top: 0 })
   }
   const changeType = (t) => {
     setType(t)
@@ -93,40 +80,132 @@ export default function App() {
     if (view === 'coins' && t !== 'coin') setView(t === 'note' ? 'notes' : 'all')
   }
 
-  const countries = useMemo(getCountries, [])
-  const list = useMemo(() => filterItems({ view, type, query, sort, favs }), [view, type, query, sort, favs])
+  // ----- Item changes (state first, then device storage) -----
+  const persist = (p) => p.catch(() => alert('Saving failed — the device storage may be full.'))
+
+  const saveItem = (data) => {
+    const now = Date.now()
+    const item = prepare({ ...data, id: data.id || store.newId(), created: data.created || now, updated: now })
+    delete item.ys
+    delete item.dated
+    persist(store.saveItem(item))
+    const full = prepare(item)
+    setItems((prev) => (prev.some((it) => it.id === full.id) ? prev.map((it) => (it.id === full.id ? full : it)) : [...prev, full]))
+    setEditing(null)
+    if (!data.id && (view === 'home' || !filterItems([full], { view, type, query, sort }).length)) {
+      // The new piece would not be visible here: show it under "All items".
+      setView('all')
+      setType('all')
+      setQuery('')
+    }
+    setSel(full.id)
+  }
+
+  const updateItem = (id, patch) => {
+    const it = items.find((x) => x.id === id)
+    if (!it) return
+    const next = { ...it, ...patch }
+    const { ys, dated, ...raw } = next
+    persist(store.saveItem(raw))
+    setItems((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)))
+  }
+
+  const deleteItem = (it) => {
+    const name = [it.denom, it.unit].filter(Boolean).join(' ') || 'this piece'
+    if (!confirm(`Delete ${name}${it.country ? ` (${it.country})` : ''}? This cannot be undone.`)) return
+    persist(store.removeItem(it.id))
+    setItems((prev) => prev.filter((x) => x.id !== it.id))
+    setSel(null)
+  }
+
+  // ----- Folders -----
+  const writeFolders = (next) => {
+    setFolders(next)
+    store.saveFolders(next)
+  }
+  const saveFolder = (name) => {
+    if (folderDialog === 'new') {
+      const f = { id: store.newId(), name }
+      writeFolders([...folders, f])
+      setFolderDialog(null)
+      go('folder:' + f.id)
+    } else {
+      writeFolders(folders.map((f) => (f.id === folderDialog.id ? { ...f, name } : f)))
+      setFolderDialog(null)
+    }
+  }
+  const deleteFolder = (folder) => {
+    if (!confirm(`Delete the folder “${folder.name}”? The pieces in it stay in your collection.`)) return
+    writeFolders(folders.filter((f) => f.id !== folder.id))
+    for (const it of items) if (inFolder(it, folder.id)) updateItem(it.id, { folders: it.folders.filter((x) => x !== folder.id) })
+    go('home')
+  }
+
+  // ----- Backup -----
+  const exportBackup = () => store.downloadBackup(items.map(({ ys, dated, ...raw }) => raw), folders)
+  const importBackup = useCallback(
+    async (file) => {
+      try {
+        const data = await store.readBackup(file)
+        const msg = items.length
+          ? `Replace your current collection (${plural(items.length, 'entry', 'entries')}) with the ${plural(data.items.length, 'entry', 'entries')} in this backup?`
+          : `Import ${plural(data.items.length, 'entry', 'entries')} from this backup?`
+        if (!confirm(msg)) return
+        await store.replaceItems(data.items)
+        store.saveFolders(data.folders)
+        setItems(data.items.map(prepare))
+        setFolders(data.folders)
+        go('home')
+      } catch (err) {
+        alert(err instanceof SyntaxError ? 'This file could not be read as a backup.' : err.message || 'Import failed.')
+      }
+    },
+    [items.length],
+  )
+
+  // ----- Derived -----
+  const countries = useMemo(() => getCountries(items), [items])
+  const list = useMemo(() => filterItems(items, { view, type, query, sort }), [items, view, type, query, sort])
 
   const isHome = view === 'home'
   const isCountry = view.startsWith('country:')
   const isDecade = view.startsWith('decade:')
-  const cc = isCountry ? view.slice(8) : null
-  const country = countries.find((c) => c.cc === cc)
-  const all = sumUp(ITEMS)
+  const isFolder = view.startsWith('folder:')
+  const country = isCountry ? countries.find((c) => c.key === view.slice(8)) : null
+  const folder = isFolder ? folders.find((f) => f.id === view.slice(7)) : null
+  const all = sumUp(items)
   const st = sumUp(list)
 
-  const title = TITLES[view] || country?.name || (isDecade ? `The ${view.slice(7)}s` : '')
+  const title = TITLES[view] || folder?.name || (isCountry ? view.slice(8) : '') || (isDecade ? `The ${view.slice(7)}s` : '') || 'Not found'
   const subtitle = isHome
-    ? `Banknotes and coins from ${all.nC} countries, issued between ${YEAR_MIN} and ${YEAR_MAX}.`
-    : SUBTITLES[view] || (isCountry ? CURRENCY[cc] : `${plural(st.pieces, 'piece')}${st.stack ? ' + one unsorted stack' : ''} · ${plural(st.nC, 'country', 'countries')}`)
-  const crumb = isCountry ? 'Countries' : isDecade ? 'Through time' : ['all', 'notes', 'coins', 'favorites'].includes(view) ? 'Library' : 'Collections'
+    ? items.length
+      ? `${plural(all.pieces, 'piece')} from ${plural(all.nC, 'country', 'countries')}.`
+      : 'Banknotes and coins, all in one place.'
+    : `${plural(st.pieces, 'piece')} · ${plural(st.nC, 'country', 'countries')}`
+  const crumb = isCountry ? 'Countries' : isDecade ? 'Through time' : isFolder ? 'Folders' : 'Library'
 
   const counts = {
     all: all.pieces,
-    notes: sumUp(ITEMS.filter((it) => it.type === 'note')).pieces,
-    coins: sumUp(ITEMS.filter((it) => it.type === 'coin')).pieces,
-    favorites: ITEMS.filter((it) => favs[it.id]).length,
-    highlights: sumUp(ITEMS.filter((it) => inFolder(it, 'highlights'))).pieces,
-    exchangeable: sumUp(ITEMS.filter((it) => inFolder(it, 'exchangeable'))).pieces,
-    identify: ITEMS.filter((it) => inFolder(it, 'identify')).length,
-    lots: sumUp(ITEMS.filter((it) => inFolder(it, 'lots'))).pieces,
+    notes: sumUp(items.filter((it) => it.type === 'note')).pieces,
+    coins: sumUp(items.filter((it) => it.type === 'coin')).pieces,
+    favorites: sumUp(items.filter((it) => it.fav)).pieces,
   }
+  const folderCounts = Object.fromEntries(folders.map((f) => [f.id, sumUp(items.filter((it) => inFolder(it, f.id))).pieces]))
 
-  const selItem = ITEMS.find((it) => it.id === sel)
-  const idx = selItem ? list.indexOf(selItem) : -1
+  const selItem = items.find((it) => it.id === sel)
+  const idx = selItem ? list.findIndex((it) => it.id === sel) : -1
 
   return (
     <div className="app">
-      <Sidebar view={view} go={go} counts={counts} countries={countries} />
+      <Sidebar
+        view={view}
+        go={go}
+        counts={counts}
+        folders={folders}
+        folderCounts={folderCounts}
+        countries={countries}
+        onNewFolder={() => setFolderDialog('new')}
+      />
 
       <main className="main">
         <div className="topbar">
@@ -144,11 +223,17 @@ export default function App() {
             />
           </label>
           <div className="grow" />
-          <button type="button" className="primary-btn">
+          <button type="button" className="primary-btn" onClick={() => setEditing('new')}>
             <Icon name="plus" size={16} stroke={2.2} />
             Add item
           </button>
         </div>
+
+        {loadError && (
+          <p className="card warning" role="alert">
+            {loadError}
+          </p>
+        )}
 
         <header className="page-head">
           {!isHome && (
@@ -162,20 +247,44 @@ export default function App() {
             </nav>
           )}
           <div className="page-title-row">
-            {isCountry && <Flag cc={cc} width={72} height={50} radius={8} className="page-flag" />}
-            <div>
+            {country && country.cc !== '?' && <Flag cc={country.cc} width={72} height={50} radius={8} className="page-flag" />}
+            <div className="grow">
               <h1>{title}</h1>
               <p className="muted">{subtitle}</p>
             </div>
           </div>
+          {folder && (
+            <div className="page-actions">
+              <button type="button" className="secondary-btn small-btn" onClick={() => setFolderDialog(folder)}>
+                <Icon name="edit" size={15} stroke={2} />
+                Rename
+              </button>
+              <button type="button" className="secondary-btn small-btn danger" onClick={() => deleteFolder(folder)}>
+                <Icon name="trash" size={15} stroke={2} />
+                Delete folder
+              </button>
+            </div>
+          )}
         </header>
 
-        {isHome ? (
-          <Overview go={go} open={open} favs={favs} countries={countries} showValues={SHOW_VALUES} />
+        {!loaded ? null : isHome ? (
+          <Overview
+            items={items}
+            folders={folders}
+            countries={countries}
+            go={go}
+            onAdd={() => setEditing('new')}
+            onNewFolder={() => setFolderDialog('new')}
+            onExport={exportBackup}
+            onImport={importBackup}
+            showValues={SHOW_VALUES}
+          />
         ) : (
           <ItemsView
             view={view}
             list={list}
+            total={items.length}
+            query={query}
             type={type}
             setType={changeType}
             sort={sort}
@@ -184,14 +293,16 @@ export default function App() {
             setLayout={setLayout}
             sel={sel}
             select={setSel}
-            favs={favs}
+            onAdd={() => setEditing('new')}
             showValues={SHOW_VALUES}
           >
             {selItem && (
               <DetailPanel
                 item={selItem}
-                fav={!!favs[selItem.id]}
-                onToggleFav={() => toggleFav(selItem.id)}
+                folders={folders}
+                onToggleFav={() => updateItem(selItem.id, { fav: !selItem.fav })}
+                onEdit={() => setEditing(selItem)}
+                onDelete={() => deleteItem(selItem)}
                 onPrev={idx > 0 ? () => setSel(list[idx - 1].id) : null}
                 onNext={idx !== -1 && idx < list.length - 1 ? () => setSel(list[idx + 1].id) : null}
                 onClose={() => setSel(null)}
@@ -202,6 +313,17 @@ export default function App() {
           </ItemsView>
         )}
       </main>
+
+      {editing && (
+        <ItemForm
+          item={editing === 'new' ? null : editing}
+          folders={folders}
+          defaultFolder={isFolder && folder && editing === 'new' ? folder.id : null}
+          onSave={saveItem}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {folderDialog && <FolderDialog folder={folderDialog === 'new' ? null : folderDialog} onSave={saveFolder} onClose={() => setFolderDialog(null)} />}
     </div>
   )
 }

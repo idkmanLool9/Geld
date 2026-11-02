@@ -36,6 +36,16 @@ const PATHS = {
   close: <path d="M6 6l12 12M18 6L6 18" />,
   back: <path d="M15 5l-7 7 7 7" />,
   next: <path d="M9 5l7 7-7 7" />,
+  edit: <path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17zM14 8l3 3" />,
+  trash: <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />,
+  camera: (
+    <>
+      <path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h3l1.5-2.5h6L16.5 7h3A1.5 1.5 0 0 1 21 8.5v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </>
+  ),
+  download: <path d="M12 4v11M7 10.5l5 5 5-5M5 20h14" />,
+  upload: <path d="M12 16V5M7 9.5l5-5 5 5M5 20h14" />,
   clock: (
     <>
       <circle cx="12" cy="13" r="8" />

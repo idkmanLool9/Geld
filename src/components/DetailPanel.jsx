@@ -1,49 +1,54 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Icon from './Icon.jsx'
 import Flag from './Flag.jsx'
 import NoteArt from './NoteArt.jsx'
 import Segmented from './Segmented.jsx'
 import { StatusPill } from './ItemsView.jsx'
-import { FOLDER_NAMES } from '../data/meta.js'
-import { valueLabel } from '../lib/collection.js'
+import { valueLabel, countryKey } from '../lib/collection.js'
 import { eur } from '../lib/format.js'
 
-export default function DetailPanel({ item, fav, onToggleFav, onPrev, onNext, onClose, go, showValues }) {
+export default function DetailPanel({ item, folders, onToggleFav, onEdit, onDelete, onPrev, onNext, onClose, go, showValues }) {
   const [side, setSide] = useState('front')
+  const ref = useRef(null)
   useEffect(() => setSide('front'), [item.id])
+  // On a phone the panel sits below the list: bring it into view when a piece is opened.
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 720px)').matches) ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [item.id])
 
   const facts = [
-    ['Series', item.series],
-    ['Issued', item.year],
-    ['Quantity', item.stack ? `${item.stack} notes (estimate)` : String(item.qty)],
-    ['Condition', item.type === 'coin' ? 'Unknown' : 'Circulated'],
-    ['Region', item.region],
+    item.series && ['Series', item.series],
+    item.year && ['Issued', item.year],
+    ['Quantity', String(item.qty)],
+    item.region && item.region !== 'Other' && ['Region', item.region],
     item.front && ['Front', item.front],
     item.back && ['Back', item.back],
   ].filter(Boolean)
 
-  const chips = item.folders.map((f) => ({ label: FOLDER_NAMES[f], view: f }))
-  if (item.cc !== '?') chips.push({ label: item.country, view: 'country:' + item.cc })
+  const chips = folders.filter((f) => (item.folders || []).includes(f.id)).map((f) => ({ label: f.name, view: 'folder:' + f.id }))
+  if (item.country) chips.push({ label: item.country, view: 'country:' + countryKey(item) })
+
+  const name = [item.denom, item.unit].filter(Boolean).join(' ') || 'Untitled'
 
   return (
-    <aside className="card detail" aria-label="Item details">
+    <aside ref={ref} className="card detail" aria-label="Item details">
       <div className="detail-bar">
         <StatusPill status={item.status} />
         <div className="grow" />
         <button
           type="button"
           className="round-btn"
-          aria-label={fav ? 'Remove from favorites' : 'Add to favorites'}
-          aria-pressed={fav}
+          aria-label={item.fav ? 'Remove from favorites' : 'Add to favorites'}
+          aria-pressed={!!item.fav}
           onClick={onToggleFav}
-          style={{ color: fav ? '#E8890C' : undefined }}
+          style={{ color: item.fav ? '#E8890C' : undefined }}
         >
-          <Icon name="star" size={16} stroke={2} fill={fav ? 'currentColor' : 'none'} />
+          <Icon name="star" size={16} stroke={2} fill={item.fav ? 'currentColor' : 'none'} />
         </button>
-        <button type="button" className="round-btn" aria-label="Previous item" onClick={onPrev} disabled={!onPrev}>
+        <button type="button" className="round-btn" aria-label="Previous item" onClick={onPrev || undefined} disabled={!onPrev}>
           <Icon name="back" size={14} stroke={2.4} />
         </button>
-        <button type="button" className="round-btn" aria-label="Next item" onClick={onNext} disabled={!onNext}>
+        <button type="button" className="round-btn" aria-label="Next item" onClick={onNext || undefined} disabled={!onNext}>
           <Icon name="next" size={14} stroke={2.4} />
         </button>
         <button type="button" className="round-btn" aria-label="Close details" onClick={onClose}>
@@ -74,29 +79,29 @@ export default function DetailPanel({ item, fav, onToggleFav, onPrev, onNext, on
       </div>
 
       <div>
-        <h2 className="detail-title">
-          {item.denom} {item.unit}
-        </h2>
-        <span className="inline-flag muted">
-          <Flag cc={item.cc} width={20} height={14} />
-          {item.country} · {item.year}
-        </span>
+        <h2 className="detail-title">{name}</h2>
+        {(item.country || item.year) && (
+          <span className="inline-flag muted">
+            {item.country && <Flag cc={item.cc} width={20} height={14} />}
+            {[item.country, item.year].filter(Boolean).join(' · ')}
+          </span>
+        )}
       </div>
 
       {showValues && (
         <div className="value-row">
           <div className="value-box">
             <span className="muted xsmall">Estimated value</span>
-            <span className="value-num">{item.stack ? '€30–300 total' : valueLabel(item)}</span>
+            <span className="value-num">{valueLabel(item)}</span>
           </div>
           <div className="value-box">
-            <span className="muted xsmall">Face value today</span>
-            <span className="value-num">{item.face ? eur(item.face) : 'None'}</span>
+            <span className="muted xsmall">Exchange value</span>
+            <span className="value-num">{item.status === 'exch' && item.face ? eur(item.face) : 'None'}</span>
           </div>
         </div>
       )}
 
-      {item.where && (
+      {item.status === 'exch' && item.where && (
         <div className="exchange">
           <Icon name="swap" size={20} stroke={2} />
           <div>
@@ -115,10 +120,12 @@ export default function DetailPanel({ item, fav, onToggleFav, onPrev, onNext, on
         ))}
       </dl>
 
-      <div className="notes">
-        <span className="notes-label">Notes</span>
-        <p>{item.note}</p>
-      </div>
+      {item.note && (
+        <div className="notes">
+          <span className="notes-label">Notes</span>
+          <p>{item.note}</p>
+        </div>
+      )}
 
       {chips.length > 0 && (
         <div className="chips">
@@ -130,6 +137,17 @@ export default function DetailPanel({ item, fav, onToggleFav, onPrev, onNext, on
           ))}
         </div>
       )}
+
+      <div className="detail-actions">
+        <button type="button" className="secondary-btn" onClick={onEdit}>
+          <Icon name="edit" size={16} stroke={2} />
+          Edit
+        </button>
+        <button type="button" className="secondary-btn danger" onClick={onDelete}>
+          <Icon name="trash" size={16} stroke={2} />
+          Delete
+        </button>
+      </div>
     </aside>
   )
 }
