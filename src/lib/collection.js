@@ -21,7 +21,7 @@ export function sumUp(items) {
     o.lo += (Number(it.lo) || 0) * q
     o.hi += (Number(it.hi) || 0) * q
     if (it.hi > 0) o.valued += q
-    if (it.status === 'exch' && it.face > 0) {
+    if ((it.status === 'exch' || it.status === 'legal') && it.face > 0) {
       o.face += it.face * q
       o.faceN += q
     }
@@ -76,7 +76,7 @@ export function filterItems(items, { view, type, query, sort }) {
 }
 
 export function valueLabel(it) {
-  if (!it.lo && !it.hi) return 'Unknown'
+  if (!it.lo && !it.hi) return (it.status === 'exch' || it.status === 'legal') && it.face > 0 ? '≈ ' + range(it.face, it.face) : 'Unknown'
   return range(it.lo || 0, it.hi || it.lo) + (it.qty > 1 ? ' ea.' : '')
 }
 

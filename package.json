@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/ocr-assets.mjs && node scripts/publish.mjs && vite",
-    "build": "node scripts/ocr-assets.mjs && node scripts/publish.mjs && vite build",
+    "build": "node scripts/ocr-assets.mjs && node scripts/publish.mjs && node scripts/rates.mjs && vite build",
     "preview": "vite preview"
   },
   "dependencies": {

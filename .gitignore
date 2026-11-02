@@ -4,3 +4,4 @@ dist
 *.log
 public/shared
 public/ocr
+public/rates.json

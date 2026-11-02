@@ -3,7 +3,8 @@ import Modal from './Modal.jsx'
 import NoteArt from './NoteArt.jsx'
 import Icon from './Icon.jsx'
 import { COUNTRIES, countryInfo } from '../data/countries.js'
-import { currentUnit, exchangeInfo, guessUnit, unitsFor } from '../data/currencies.js'
+import { currencyCode, currentUnit, exchangeInfo, guessUnit, legalTenderAdvice, parseDenom, unitsFor } from '../data/currencies.js'
+import { getRates, toEuro } from '../lib/rates.js'
 import { STATUS } from '../data/meta.js'
 import { readPhoto } from '../lib/store.js'
 import { parseText, photoColor, readText } from '../lib/autofill.js'
@@ -171,11 +172,33 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
   useEffect(() => {
     const info = exchangeInfo(cc, f.unit, f.denom, f.type)
     if (info) apply({ status: info.status, face: info.face || '', where: info.where, note: info.note })
-    else if (cc !== '?' && same(f.unit, currentUnit(cc))) {
-      unapply(['face', 'where'])
-      apply({ status: 'legal' })
-    } else unapply(['status', 'face', 'where'])
+    else if (cc !== '?' && same(f.unit, currentUnit(cc))) apply({ status: 'legal' })
+    else unapply(['status', 'face', 'where'])
   }, [cc, f.unit, f.denom, f.type]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Still legal tender: today's value in euro (live rate) and how to turn it into money.
+  const [rateNote, setRateNote] = useState('')
+  useEffect(() => {
+    setRateNote('')
+    if (f.status !== 'legal') return
+    const code = currencyCode(cc, f.unit)
+    if (!code) return
+    apply({ where: legalTenderAdvice(code, txt(f.country), f.type) })
+    const n = parseDenom(f.denom)
+    if (!n) return
+    let gone = false
+    getRates().then((r) => {
+      if (gone) return
+      const v = toEuro(r, code, n)
+      if (v != null) {
+        apply({ face: v })
+        setRateNote(code === 'EUR' ? '' : `Rate of ${r.date}: 1 EUR = ${r.rates[code.toLowerCase()]} ${code}.`)
+      } else setRateNote(r ? `No exchange rate found for ${code}.` : 'Exchange rates could not be loaded (no internet?).')
+    })
+    return () => {
+      gone = true
+    }
+  }, [cc, f.unit, f.denom, f.type, f.status, f.country]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reading a new photo: colour + text (country, denomination, year, unit).
   const readPhotoInfo = async (side, dataUrl) => {
@@ -257,12 +280,12 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
       year: txt(f.year),
       front: txt(f.front),
       back: txt(f.back),
-      where: f.status === 'exch' ? txt(f.where) : '',
+      where: f.status === 'exch' || f.status === 'legal' ? txt(f.where) : '',
       note: txt(f.note),
       qty: Math.max(1, Math.round(num(f.qty)) || 1),
       lo: Math.min(lo, hi),
       hi: Math.max(lo, hi),
-      face: f.status === 'exch' ? num(f.face) : 0,
+      face: f.status === 'exch' || f.status === 'legal' ? num(f.face) : 0,
       photos,
     })
   }
@@ -413,15 +436,16 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
             <span>Value to (€ each)</span>
             <input className={cls('hi')} inputMode="decimal" value={f.hi} onChange={set('hi')} placeholder="same as from" />
           </label>
-          {f.status === 'exch' && (
+          {(f.status === 'exch' || f.status === 'legal') && (
             <>
               <label className="field">
-                <span>Exchange value (€ each)</span>
+                <span>{f.status === 'legal' ? 'Worth in euro today (each)' : 'Exchange value (€ each)'}</span>
                 <input className={cls('face')} inputMode="decimal" value={f.face} onChange={set('face')} placeholder="0" />
+                {f.status === 'legal' && rateNote && <span className="field-note">{rateNote}</span>}
               </label>
               <label className="field">
-                <span>Where to exchange</span>
-                <input className={cls('where')} value={f.where} onChange={set('where')} placeholder="Bank, address, deadline" />
+                <span>{f.status === 'legal' ? 'How to cash it' : 'Where to exchange'}</span>
+                <textarea className={cls('where')} rows={3} value={f.where} onChange={set('where')} placeholder="Bank, address, deadline" />
               </label>
             </>
           )}

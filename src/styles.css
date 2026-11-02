@@ -450,6 +450,7 @@ body.no-scroll { overflow: hidden; }
   background: var(--fill); font-size: 14px; font-weight: 500; cursor: pointer;
 }
 .check input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.field-note { font-size: 12px; font-weight: 400; color: var(--muted); }
 .form-error { color: #c4271b; font-size: 14px; }
 
 /* ---------- Publish ---------- */

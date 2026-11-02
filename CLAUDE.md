@@ -72,6 +72,10 @@ Nothing here may cost money: no paid APIs, no keys. In the Add/Edit form:
 - **Currency:** `src/data/currencies.js` — current + older units per country, `guessUnit()`,
   and `exchangeInfo()` with the official euro rates and central-bank exchange deadlines
   (status, exchange value in EUR, where).
+- **Legal tender:** `currencyCode()` + `legalTenderAdvice()` (currencies.js) and `src/lib/rates.js`:
+  today's value in EUR from the free, keyless currency-api (fawazahmed0, via jsDelivr + mirror),
+  cached 12 h on the device; `scripts/rates.mjs` saves a copy as `public/rates.json` at build
+  time (fallback, gitignored). Stored in `face`; the detail panel recomputes it live.
 - **Same piece already owned:** offers to copy its details. Series suggestions come from the collection.
 - Auto-filled fields are highlighted (`.is-auto`) and never overwrite what the user typed.
 - Collector values cannot be looked up for free; they stay the user's own estimate.
@@ -103,6 +107,7 @@ src/
     Flag.jsx              flag-icons SVG per country (loaded on demand); code tile otherwise
     Icon.jsx, Segmented.jsx
 scripts/publish.mjs       data/collection.json → public/shared (runs before dev/build)
+scripts/rates.mjs         saves today's exchange rates as public/rates.json (build only)
 scripts/ocr-assets.mjs    copies the OCR engine + model into public/ocr (runs before dev/build)
 ```
 

@@ -6,11 +6,32 @@ import Segmented from './Segmented.jsx'
 import { StatusPill } from './ItemsView.jsx'
 import { valueLabel, countryKey } from '../lib/collection.js'
 import { eur } from '../lib/format.js'
+import { currencyCode, parseDenom } from '../data/currencies.js'
+import { getRates, toEuro } from '../lib/rates.js'
 
 export default function DetailPanel({ item, folders, onToggleFav, onEdit, onDelete, onPrev, onNext, onClose, go, showValues }) {
   const [side, setSide] = useState('front')
   const ref = useRef(null)
   useEffect(() => setSide('front'), [item.id])
+
+  // Legal tender: recompute today's value with the latest rate.
+  const legal = item.status === 'legal'
+  const [live, setLive] = useState(null)
+  useEffect(() => {
+    setLive(null)
+    const code = legal ? currencyCode(item.cc, item.unit) : null
+    const n = parseDenom(item.denom)
+    if (!code || !n) return
+    let gone = false
+    getRates().then((r) => {
+      const v = toEuro(r, code, n)
+      if (!gone && v != null) setLive({ value: v, date: r.date })
+    })
+    return () => {
+      gone = true
+    }
+  }, [legal, item.cc, item.unit, item.denom])
+  const cash = live ? live.value : item.face
   // On a phone the panel sits below the list: bring it into view when a piece is opened.
   useEffect(() => {
     if (window.matchMedia('(max-width: 720px)').matches) ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -95,17 +116,18 @@ export default function DetailPanel({ item, folders, onToggleFav, onEdit, onDele
             <span className="value-num">{valueLabel(item)}</span>
           </div>
           <div className="value-box">
-            <span className="muted xsmall">Exchange value</span>
-            <span className="value-num">{item.status === 'exch' && item.face ? eur(item.face) : 'None'}</span>
+            <span className="muted xsmall">{legal ? 'Worth in euro today' : 'Exchange value'}</span>
+            <span className="value-num">{(item.status === 'exch' || legal) && cash ? eur(cash) : legal ? '—' : 'None'}</span>
+            {legal && live && <span className="muted xsmall">Rate of {live.date}</span>}
           </div>
         </div>
       )}
 
-      {item.status === 'exch' && item.where && (
+      {(item.status === 'exch' || legal) && item.where && (
         <div className="exchange">
           <Icon name="swap" size={20} stroke={2} />
           <div>
-            <span className="exchange-title">Can still be exchanged</span>
+            <span className="exchange-title">{legal ? 'How to cash it' : 'Can still be exchanged'}</span>
             <span>{item.where}</span>
           </div>
         </div>

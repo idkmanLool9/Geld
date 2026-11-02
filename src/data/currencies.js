@@ -2,7 +2,7 @@
 // exchange rules for the old euro-area currencies. Used to suggest and auto-fill the form.
 
 const CURRENT = `AD:Euro AE:Dirham AF:Afghani AG:East Caribbean Dollar AI:East Caribbean Dollar AL:Lek AM:Dram AO:Kwanza AR:Peso
-AS:US Dollar AT:Euro AU:Dollar AW:Florin AX:Euro AZ:Manat BA:Convertible Mark BB:Dollar BD:Taka BE:Euro BF:CFA Franc BG:Lev
+AS:US Dollar AT:Euro AU:Dollar AW:Florin AX:Euro AZ:Manat BA:Convertible Mark BB:Dollar BD:Taka BE:Euro BF:CFA Franc BG:Euro
 BH:Dinar BI:Franc BJ:CFA Franc BL:Euro BM:Dollar BN:Dollar BO:Boliviano BQ:US Dollar BR:Real BS:Dollar BT:Ngultrum BV:Krone
 BW:Pula BY:Ruble BZ:Dollar CA:Dollar CC:Australian Dollar CD:Franc CF:CFA Franc CG:CFA Franc CH:Franken CI:CFA Franc
 CK:NZ Dollar CL:Peso CM:CFA Franc CN:Yuan CO:Peso CR:Colón CU:Peso CV:Escudo CW:Caribbean Guilder CX:Australian Dollar CY:Euro
@@ -30,10 +30,10 @@ BWA:CFA Franc BEAC:CFA Franc CEY:Rupee BU:Kyat AN:Gulden ECS:Dollar`
 const OLDER = {
   BE: ['Frank'], NL: ['Gulden'], DE: ['Mark', 'Reichsmark'], AT: ['Schilling'], LU: ['Franc'], FR: ['Franc'], IT: ['Lira'],
   ES: ['Peseta'], PT: ['Escudo'], IE: ['Pound'], FI: ['Markka'], GR: ['Drachma'], SI: ['Tolar'], CY: ['Pound'], MT: ['Lira'],
-  SK: ['Koruna'], EE: ['Kroon'], LV: ['Lats'], LT: ['Litas'], HR: ['Kuna', 'Dinar'], MC: ['Franc'], SM: ['Lira'], VA: ['Lira'],
+  SK: ['Koruna'], BG: ['Lev'], EE: ['Kroon'], LV: ['Lats'], LT: ['Litas'], HR: ['Kuna', 'Dinar'], MC: ['Franc'], SM: ['Lira'], VA: ['Lira'],
   ME: ['Mark', 'Dinar'], XK: ['Mark', 'Dinar'], AD: ['Peseta', 'Franc'],
   TR: ['Yeni Türk Lirası', 'Türk Lirası'], IL: ['Sheqel', 'Lira'], RU: ['Ruble (Soviet)'], UA: ['Karbovanets'], BY: ['Ruble (old)'],
-  PL: ['Złoty (old)'], HU: ['Pengő'], RO: ['Leu (old)'], BG: ['Lev (old)'], YU: ['Dinar'], RS: ['Dinar (Yugoslav)'],
+  PL: ['Złoty (old)'], HU: ['Pengő'], RO: ['Leu (old)'], YU: ['Dinar'], RS: ['Dinar (Yugoslav)'],
   MX: ['Peso (old)'], BR: ['Cruzeiro Real', 'Cruzado', 'Cruzeiro'], AR: ['Austral', 'Peso Argentino'], PE: ['Inti', 'Sol de Oro'],
   CL: ['Escudo'], VE: ['Bolívar Fuerte'], ZW: ['Dollar'], GH: ['Cedi (old)'], CD: ['Zaire'], AF: ['Afghani (old)'],
   AZ: ['Manat (old)'], TM: ['Manat (old)'], ZM: ['Kwacha (old)'], MR: ['Ouguiya (old)'], MG: ['Malagasy Franc'],
@@ -72,6 +72,7 @@ const EURO_LEGACY = {
   LV: { unit: 'Lats', rate: 0.702804, bank: 'Latvijas Banka, Riga', until: null },
   LT: { unit: 'Litas', rate: 3.4528, bank: 'Lietuvos bankas, Vilnius', until: null },
   HR: { unit: 'Kuna', rate: 7.5345, bank: 'Hrvatska narodna banka, Zagreb', until: null },
+  BG: { unit: 'Lev', rate: 1.95583, bank: 'Bulgarian National Bank, Sofia', until: null },
   FR: { unit: 'Franc', rate: 6.55957, until: '2012-02-17' },
   IT: { unit: 'Lira', rate: 1936.27, until: '2011-12-06' },
   ES: { unit: 'Peseta', rate: 166.386, until: '2021-06-30' },
@@ -82,8 +83,45 @@ const EURO_LEGACY = {
   MT: { unit: 'Lira', rate: 0.4293, until: '2018-01-31' },
 }
 
+// ISO 4217 code of each country's current currency (for today's value in euro).
+const CODES = `AD:EUR AE:AED AF:AFN AG:XCD AI:XCD AL:ALL AM:AMD AO:AOA AR:ARS AS:USD AT:EUR AU:AUD AW:AWG AX:EUR AZ:AZN BA:BAM
+BB:BBD BD:BDT BE:EUR BF:XOF BG:EUR BH:BHD BI:BIF BJ:XOF BL:EUR BM:BMD BN:BND BO:BOB BQ:USD BR:BRL BS:BSD BT:BTN BV:NOK BW:BWP
+BY:BYN BZ:BZD CA:CAD CC:AUD CD:CDF CF:XAF CG:XAF CH:CHF CI:XOF CK:NZD CL:CLP CM:XAF CN:CNY CO:COP CR:CRC CU:CUP CV:CVE CW:XCG
+CX:AUD CY:EUR CZ:CZK DE:EUR DJ:DJF DK:DKK DM:XCD DO:DOP DZ:DZD EC:USD EE:EUR EG:EGP EH:MAD ER:ERN ES:EUR ET:ETB FI:EUR FJ:FJD
+FK:FKP FM:USD FO:DKK FR:EUR GA:XAF GB:GBP GD:XCD GE:GEL GF:EUR GG:GBP GH:GHS GI:GIP GL:DKK GM:GMD GN:GNF GP:EUR GQ:XAF GR:EUR
+GS:GBP GT:GTQ GU:USD GW:XOF GY:GYD HK:HKD HM:AUD HN:HNL HR:EUR HT:HTG HU:HUF ID:IDR IE:EUR IL:ILS IM:GBP IN:INR IO:USD IQ:IQD
+IR:IRR IS:ISK IT:EUR JE:GBP JM:JMD JO:JOD JP:JPY KE:KES KG:KGS KH:KHR KI:AUD KM:KMF KN:XCD KP:KPW KR:KRW KW:KWD KY:KYD KZ:KZT
+LA:LAK LB:LBP LC:XCD LI:CHF LK:LKR LR:LRD LS:LSL LT:EUR LU:EUR LV:EUR LY:LYD MA:MAD MC:EUR MD:MDL ME:EUR MF:EUR MG:MGA MH:USD
+MK:MKD ML:XOF MM:MMK MN:MNT MO:MOP MP:USD MQ:EUR MR:MRU MS:XCD MT:EUR MU:MUR MV:MVR MW:MWK MX:MXN MY:MYR MZ:MZN NA:NAD NC:XPF
+NE:XOF NF:AUD NG:NGN NI:NIO NL:EUR NO:NOK NP:NPR NR:AUD NU:NZD NZ:NZD OM:OMR PA:PAB PE:PEN PF:XPF PG:PGK PH:PHP PK:PKR PL:PLN
+PM:EUR PN:NZD PR:USD PS:ILS PT:EUR PW:USD PY:PYG QA:QAR RE:EUR RO:RON RS:RSD RU:RUB RW:RWF SA:SAR SB:SBD SC:SCR SD:SDG SE:SEK
+SG:SGD SH:SHP SI:EUR SJ:NOK SK:EUR SL:SLE SM:EUR SN:XOF SO:SOS SR:SRD SS:SSP ST:STN SV:USD SX:XCG SY:SYP SZ:SZL TC:USD TD:XAF
+TF:EUR TG:XOF TH:THB TJ:TJS TK:NZD TL:USD TM:TMT TN:TND TO:TOP TR:TRY TT:TTD TV:AUD TW:TWD TZ:TZS UA:UAH UG:UGX UM:USD US:USD
+UY:UYU UZ:UZS VA:EUR VC:XCD VE:VES VG:USD VI:USD VN:VND VU:VUV WF:XPF WS:WST XK:EUR YE:YER YT:EUR ZA:ZAR ZM:ZMW ZW:ZWG EU:EUR
+GB-SCT:GBP GB-NIR:GBP BWA:XOF BEAC:XAF ECS:XCD`
+const CODE_BY_CC = Object.fromEntries(CODES.split(/\s+/).map((p) => p.split(':')))
+
+/** ISO code when `unit` is the country's current currency, else null. */
+export function currencyCode(cc, unit) {
+  const now = CURRENT_BY_CC[cc]
+  if (!now || String(unit || '').trim().toLowerCase() !== now.toLowerCase()) return null
+  return CODE_BY_CC[cc] || null
+}
+
+/** Advice for money that is still legal tender: how to turn it into euro. */
+export function legalTenderAdvice(code, country, type = 'note') {
+  if (code === 'EUR') return 'Euro: spend it, or pay it into any bank account in the euro area.'
+  const where = country ? ` in ${country}` : ''
+  if (type === 'coin') return `Still valid money${where}. Exchange offices rarely take coins: spend them${where}.`
+  return (
+    `Still valid money${where}. Change it at a currency exchange office (for example GWK Travelex in the Netherlands; ` +
+    `many banks in Belgium and the Netherlands no longer change cash), or spend it${where}. An exchange office pays a little ` +
+    `less than the market rate. Central banks do not buy valid foreign money by post.`
+  )
+}
+
 // Year each country switched to the euro (default 2002).
-const EURO_SINCE = { SI: 2007, CY: 2008, MT: 2008, SK: 2009, EE: 2011, LV: 2014, LT: 2015, HR: 2023 }
+const EURO_SINCE = { SI: 2007, CY: 2008, MT: 2008, SK: 2009, EE: 2011, LV: 2014, LT: 2015, HR: 2023, BG: 2026 }
 
 /**
  * The unit to fill in without asking: the only one there is, or — for a euro country with a
@@ -98,7 +136,7 @@ export function guessUnit(cc, year) {
   return null
 }
 
-const parseDenom = (d) => {
+export const parseDenom = (d) => {
   const s = String(d || '').trim().toUpperCase().replace(/[\s.,']/g, '')
   const m = s.match(/^(\d+)(K|M)?$/)
   if (!m) return null

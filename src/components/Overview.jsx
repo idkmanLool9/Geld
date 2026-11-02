@@ -41,7 +41,7 @@ function Hero({ items, showValues }) {
           <Stat value={all.pieces} label="Pieces" />
           <Stat value={all.nC} label={all.nC === 1 ? 'Country' : 'Countries'} />
           {years.length > 0 && <Stat value={`${Math.min(...years)}–${Math.max(...years)}`} label="Years covered" />}
-          {showValues && all.faceN > 0 && <Stat value={eur(all.face)} label="Still exchangeable" />}
+          {showValues && all.faceN > 0 && <Stat value={eur(all.face)} label="Cash value" />}
         </div>
       </div>
       {regions.length > 0 && (

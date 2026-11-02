@@ -39,9 +39,9 @@ function Summary({ list, showValues }) {
           </div>
           {st.faceN > 0 && (
           <div className="card summary-tile">
-            <span className="muted small">Still exchangeable</span>
+            <span className="muted small">Cash value</span>
             <span className="summary-value">{eur(st.face)}</span>
-            <span className="muted small">{plural(st.faceN, 'piece')} marked exchangeable</span>
+            <span className="muted small">{plural(st.faceN, 'piece')} exchangeable or legal tender</span>
           </div>
           )}
         </>
