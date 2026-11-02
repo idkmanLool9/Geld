@@ -1,27 +1,17 @@
-import { FLAGS } from '../data/flags.js'
+import { flagFor } from '../data/countries.js'
 
-/** Simplified flag. Size it with width/height; it fills the box. Countries without a drawn flag show their code. */
+// One small SVG file per flag, fetched by the browser only when that flag is on screen.
+const FILES = import.meta.glob('../../node_modules/flag-icons/flags/4x3/*.svg', { query: '?url', import: 'default', eager: true })
+const URLS = Object.fromEntries(Object.entries(FILES).map(([path, url]) => [path.split('/').pop().slice(0, -4), url]))
+
+/** Country flag. Issuers without a flag show their short code; unknown shows a "?" tile. */
 export default function Flag({ cc, width, height, radius = 3, className = '', style }) {
-  const f = FLAGS[cc]
-  if (!f && cc && cc !== '?') {
-    return (
-      <span className={`flag flag-code ${className}`} style={{ width, height, borderRadius: radius, fontSize: Math.max(7, height * 0.42), ...style }} aria-hidden="true">
-        {cc}
-      </span>
-    )
-  }
-  const g = f || FLAGS['?']
+  const box = { width, height, borderRadius: radius, ...style }
+  const url = URLS[flagFor(cc)]
+  if (url) return <span className={`flag flag-img ${className}`} style={{ ...box, backgroundImage: `url("${url}")` }} aria-hidden="true" />
   return (
-    <span className={`flag ${className}`} style={{ width, height, borderRadius: radius, ...style }} aria-hidden="true">
-      <span className="flag-inner" style={{ flexDirection: g.dir }}>
-        {g.stripes.map(([color, w], i) => (
-          <span key={i} style={{ flex: `${w} 1 0`, background: color }} />
-        ))}
-        {(g.marks || []).map((m, i) => (
-          <span key={'m' + i} style={{ position: 'absolute', ...m }} />
-        ))}
-        <span className="flag-ring" />
-      </span>
+    <span className={`flag flag-code ${className}`} style={{ ...box, fontSize: Math.max(7, height * (cc && cc.length > 2 ? 0.34 : 0.42)) }} aria-hidden="true">
+      {cc && cc !== '?' ? cc : '?'}
     </span>
   )
 }

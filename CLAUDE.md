@@ -40,8 +40,14 @@ The app starts empty — there is no built-in collection. Everything the user ad
 - Items, including photos (downscaled JPEG data URLs), in IndexedDB (`collectie` / `items`).
 - User folders in `localStorage` (`collection-folders`), as `[{ id, name }]`.
 - Favorites are `item.fav`. Folder membership is `item.folders` (folder ids).
-- Backup: export/import a JSON file (`{ app, version, folders, items }`) from the overview.
-  The iOS home-screen app has its own storage, separate from Safari.
+- Export (top bar) makes one JSON file `{ app, version, exported, folders, items }` with every
+  photo embedded as a data URL. On phones it opens the share sheet. Import reads the same file.
+- **Shared collection:** `data/collection.json` (an export) is published for everyone.
+  `scripts/publish.mjs` runs before every build and splits it into `public/shared/collection.json`
+  + `public/shared/photos/*.jpg` (gitignored). On start the app fetches `shared/collection.json`;
+  a new `version` replaces the device's collection — silently, unless the device has local
+  changes since its last sync/export (`collection-sync` in localStorage), then it asks first.
+  To publish: replace `data/collection.json` with Levi's latest export and push to `main`.
 
 Item fields: `id, type ('note'|'coin'), country, cc, region, denom, unit, series, year (text),
 qty, lo, hi (EUR estimate each), face (exchange value each), status (legal|exch|demo|check),
@@ -54,10 +60,9 @@ derived at load time (`prepare()` in `src/lib/collection.js`) and not stored.
 ```
 src/
   App.jsx                 state, storage, routing, page header, top bar, dialogs
-  data/countries.js       country list (ISO-2 → region), countryInfo(name)
+  data/countries.js       all ISO countries + historical issuers, region, flag, aliases
   data/meta.js            regions + colours, statuses
-  data/flags.js           simplified flags; countries without one show their code
-  lib/store.js            IndexedDB/localStorage, photo downscaling, backup export/import
+  lib/store.js            IndexedDB/localStorage, photo downscaling, export/import, shared sync
   lib/collection.js       prepare, filtering, sorting, totals (sumUp), countries
   lib/format.js           eur(), range(), plural()
   components/
@@ -70,7 +75,9 @@ src/
     FolderDialog.jsx      new / rename folder
     Modal.jsx             dialog shell (full-screen sheet on phones)
     NoteArt.jsx           drawn note/coin; shows item.photos.front/back when present
-    Flag.jsx, Icon.jsx, Segmented.jsx
+    Flag.jsx              flag-icons SVG per country (loaded on demand); code tile otherwise
+    Icon.jsx, Segmented.jsx
+scripts/publish.mjs       data/collection.json → public/shared (runs before dev/build)
 ```
 
 ## Design rules
@@ -85,6 +92,6 @@ src/
 
 ## Ideas (not built yet)
 
-- Sync between devices (e.g. Supabase) instead of backup files.
+- Live sync between devices (e.g. Supabase) instead of publishing an export.
 - CSV export.
 - Optional: Dutch UI, dark mode.

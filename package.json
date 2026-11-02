@@ -4,11 +4,12 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node scripts/publish.mjs && vite",
+    "build": "node scripts/publish.mjs && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "flag-icons": "7.5.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

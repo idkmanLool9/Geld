@@ -32,4 +32,10 @@ Then open http://localhost:5173.
 Open a terminal in this folder and run `claude`. `CLAUDE.md` explains the structure,
 the data rules and what to build next.
 
-The collection starts empty: add pieces in the app. They are stored on the device; use **Export backup** on the overview to keep a copy.
+## Share the collection with everyone
+
+1. In the app, tap **Export** (top right). You get one file, `collection.json`, with every
+   piece, photo and folder.
+2. Put that file in this repository as `data/collection.json` (send it to Claude, or on
+   github.com: open `data/` → **Add file → Upload files**).
+3. About a minute later everyone who opens the site or the home-screen app gets the same collection.

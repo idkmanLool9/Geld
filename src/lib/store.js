@@ -67,7 +67,7 @@ export const newId = () =>
   globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2)
 
 /** Downscale a photo to a JPEG data URL so it stays small enough to store. */
-export function readPhoto(file, max = 1600) {
+export function readPhoto(file, max = 1400) {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file)
     const img = new Image()
@@ -78,7 +78,7 @@ export function readPhoto(file, max = 1600) {
       c.height = Math.round(img.naturalHeight * k)
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height)
       URL.revokeObjectURL(url)
-      resolve(c.toDataURL('image/jpeg', 0.85))
+      resolve(c.toDataURL('image/jpeg', 0.8))
     }
     img.onerror = () => {
       URL.revokeObjectURL(url)
@@ -88,16 +88,86 @@ export function readPhoto(file, max = 1600) {
   })
 }
 
-export function downloadBackup(items, folders) {
-  const data = { app: 'collectie', version: 1, exported: new Date().toISOString(), folders, items }
-  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
+// ----- Sync state: which shared version this device has, and whether it changed since -----
+const SYNC_KEY = 'collection-sync'
+export function loadSync() {
+  try {
+    return JSON.parse(localStorage.getItem(SYNC_KEY) || '{}') || {}
+  } catch {
+    return {}
+  }
+}
+export function saveSync(patch) {
+  try {
+    localStorage.setItem(SYNC_KEY, JSON.stringify({ ...loadSync(), ...patch }))
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+/** The collection published on the site (data/collection.json), or null. */
+export async function fetchShared() {
+  try {
+    const res = await fetch('shared/collection.json', { cache: 'no-cache' })
+    if (!res.ok) return null
+    const data = await res.json()
+    return data?.version && Array.isArray(data.items) ? data : null
+  } catch {
+    return null
+  }
+}
+
+const toDataUrl = (blob) =>
+  new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onload = () => resolve(r.result)
+    r.onerror = () => reject(r.error)
+    r.readAsDataURL(blob)
+  })
+
+/** Photos that came from the site are links: embed them so the export is complete on its own. */
+async function embedPhotos(items) {
+  return Promise.all(
+    items.map(async (it) => {
+      const photos = { ...(it.photos || {}) }
+      for (const side of ['front', 'back']) {
+        const p = photos[side]
+        if (p && !p.startsWith('data:')) {
+          try {
+            photos[side] = await toDataUrl(await (await fetch(p)).blob())
+          } catch {
+            /* keep the link */
+          }
+        }
+      }
+      return { ...it, photos }
+    }),
+  )
+}
+
+/** One file with every item, photo and folder. Phones get the share sheet (AirDrop, Files, mail…). */
+export async function exportCollection(items, folders) {
+  const data = { app: 'collectie', version: 1, exported: new Date().toISOString(), folders, items: await embedPhotos(items) }
+  const name = 'collection.json'
+  const file = new File([JSON.stringify(data)], name, { type: 'application/json' })
+  const touch = window.matchMedia?.('(pointer: coarse)').matches
+  if (touch && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: 'Collection export' })
+      return true
+    } catch (err) {
+      if (err?.name === 'AbortError') return false
+      /* fall through to a download */
+    }
+  }
   const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = `collection-backup-${new Date().toISOString().slice(0, 10)}.json`
+  a.href = URL.createObjectURL(file)
+  a.download = name
   document.body.appendChild(a)
   a.click()
   a.remove()
   setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+  return true
 }
 
 export async function readBackup(file) {

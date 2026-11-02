@@ -110,20 +110,20 @@ function Backup({ onExport, onImport, count }) {
   const input = useRef(null)
   return (
     <section className="section">
-      <SectionHead title="Backup" aside="Your collection is stored on this device only" />
+      <SectionHead title="Export & share" aside="One file with everything" />
       <div className="card backup">
         <p className="muted">
-          Save a backup file now and then — it holds every item, photo and folder. Import it to restore the collection, or to move it to
-          another phone or computer. Note: the home-screen app and the browser keep separate copies.
+          Export makes one file with every piece, photo and folder. Once that file is published on the site, everyone who opens the app
+          gets the same collection, on every device. You can also import the file yourself, for example to restore a copy.
         </p>
         <div className="backup-actions">
           <button type="button" className="secondary-btn" onClick={onExport} disabled={!count}>
             <Icon name="download" size={16} stroke={2} />
-            Export backup
+            Export
           </button>
           <button type="button" className="secondary-btn" onClick={() => input.current.click()}>
             <Icon name="upload" size={16} stroke={2} />
-            Import backup
+            Import
           </button>
           <input
             ref={input}

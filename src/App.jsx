@@ -40,12 +40,44 @@ export default function App() {
   const [editing, setEditing] = useState(null) // null | 'new' | item
   const [folderDialog, setFolderDialog] = useState(null) // null | 'new' | folder
 
+  const [exporting, setExporting] = useState(false)
+
   useEffect(() => {
-    store
-      .loadItems()
-      .then((its) => setItems(its.map(prepare)))
-      .catch(() => setLoadError('This browser blocks storage, so pieces cannot be saved here (private browsing?).'))
-      .finally(() => setLoaded(true))
+    ;(async () => {
+      let local = []
+      try {
+        local = await store.loadItems()
+      } catch {
+        setLoadError('This browser blocks storage, so pieces cannot be saved here (private browsing?).')
+      }
+      setItems(local.map(prepare))
+      setLoaded(true)
+
+      // A collection published on the site reaches every device: take it over when it is new.
+      const shared = await store.fetchShared()
+      const sync = store.loadSync()
+      if (!shared || shared.version === sync.version || shared.version === sync.declined) return
+      const changedHere = local.length > 0 && sync.dirty !== false
+      if (
+        changedHere &&
+        !confirm(
+          `A new version of the collection is available (${plural(shared.items.length, 'entry', 'entries')}). ` +
+            'Load it? Pieces you added or changed on this device only will be replaced.',
+        )
+      ) {
+        store.saveSync({ declined: shared.version })
+        return
+      }
+      try {
+        await store.replaceItems(shared.items)
+      } catch {
+        /* storage blocked: still show it */
+      }
+      store.saveFolders(shared.folders || [])
+      store.saveSync({ version: shared.version, dirty: false, declined: null })
+      setItems(shared.items.map(prepare))
+      setFolders(shared.folders || [])
+    })()
     store.requestPersistence()
   }, [])
 
@@ -81,7 +113,10 @@ export default function App() {
   }
 
   // ----- Item changes (state first, then device storage) -----
-  const persist = (p) => p.catch(() => alert('Saving failed — the device storage may be full.'))
+  const persist = (p) => {
+    store.saveSync({ dirty: true })
+    return p.catch(() => alert('Saving failed — the device storage may be full.'))
+  }
 
   const saveItem = (data) => {
     const now = Date.now()
@@ -122,6 +157,7 @@ export default function App() {
   const writeFolders = (next) => {
     setFolders(next)
     store.saveFolders(next)
+    store.saveSync({ dirty: true })
   }
   const saveFolder = (name) => {
     if (folderDialog === 'new') {
@@ -142,7 +178,21 @@ export default function App() {
   }
 
   // ----- Backup -----
-  const exportBackup = () => store.downloadBackup(items.map(({ ys, dated, ...raw }) => raw), folders)
+  const exportBackup = async () => {
+    if (!items.length) {
+      alert('There is nothing to export yet — add a piece first.')
+      return
+    }
+    setExporting(true)
+    try {
+      // This device now matches the exported file: once it is published, no "replace?" question here.
+      if (await store.exportCollection(items.map(({ ys, dated, ...raw }) => raw), folders)) store.saveSync({ dirty: false })
+    } catch {
+      alert('Export failed. Please try again.')
+    } finally {
+      setExporting(false)
+    }
+  }
   const importBackup = useCallback(
     async (file) => {
       try {
@@ -153,6 +203,7 @@ export default function App() {
         if (!confirm(msg)) return
         await store.replaceItems(data.items)
         store.saveFolders(data.folders)
+        store.saveSync({ dirty: true })
         setItems(data.items.map(prepare))
         setFolders(data.folders)
         go('home')
@@ -223,6 +274,10 @@ export default function App() {
             />
           </label>
           <div className="grow" />
+          <button type="button" className="secondary-btn" onClick={exportBackup} disabled={exporting}>
+            <Icon name="download" size={16} stroke={2} />
+            {exporting ? 'Exporting…' : 'Export'}
+          </button>
           <button type="button" className="primary-btn" onClick={() => setEditing('new')}>
             <Icon name="plus" size={16} stroke={2.2} />
             Add item

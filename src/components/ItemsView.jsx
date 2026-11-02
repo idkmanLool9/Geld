@@ -37,11 +37,13 @@ function Summary({ list, showValues }) {
             <span className="summary-value">{st.hi > 0 ? range(st.lo, st.hi) : '—'}</span>
             <span className="muted small">{st.valued < st.pieces ? `${plural(st.valued, 'piece')} valued` : 'Your estimates'}</span>
           </div>
+          {st.faceN > 0 && (
           <div className="card summary-tile">
             <span className="muted small">Still exchangeable</span>
             <span className="summary-value">{eur(st.face)}</span>
             <span className="muted small">{plural(st.faceN, 'piece')} marked exchangeable</span>
           </div>
+          )}
         </>
       )}
     </section>

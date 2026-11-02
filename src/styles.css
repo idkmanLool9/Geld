@@ -129,6 +129,7 @@ h1, h2, h3, p { margin: 0; }
 
 /* ---------- Flag ---------- */
 .flag { display: block; flex: none; overflow: hidden; }
+.flag-img { background: #e5e5ea center / cover no-repeat; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
 .flag-inner { position: relative; display: flex; width: 100%; height: 100%; overflow: hidden; border-radius: inherit; }
 .flag-ring { position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
 .inline-flag { display: inline-flex; align-items: center; gap: 8px; }
