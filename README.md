@@ -3,7 +3,22 @@
 Viewer for a collection of banknotes and coins — folders by type and country, a timeline by decade,
 and a flip-card detail view for every note.
 
-## Run it
+## Live on GitHub Pages — no commands needed
+
+Every push to `main` is built and published automatically by
+`.github/workflows/deploy.yml`. Editing a file on github.com (for example
+`src/data/items.js`) is enough: about a minute later the site is updated.
+
+**One-time setup:** repo **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+The site is then at `https://idkmanlool9.github.io/geld/`.
+
+## Add to Home Screen (full screen)
+
+Open the site in Safari → Share → **Add to Home Screen**. Opened from the icon it runs
+full screen as its own app, without Safari's address bar or toolbar. On Android,
+Chrome's menu → **Add to Home screen / Install app** does the same.
+
+## Run it locally (optional)
 
 ```bash
 npm install

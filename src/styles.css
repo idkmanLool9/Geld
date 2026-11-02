@@ -24,7 +24,11 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
+html { -webkit-text-size-adjust: 100%; }
 body {
+  /* Keep content clear of the notch / home indicator when opened full screen from the home screen */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  -webkit-tap-highlight-color: transparent;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
@@ -55,7 +59,7 @@ h1, h2, h3, p { margin: 0; }
 .card { background: var(--surface); border-radius: var(--radius-card); }
 
 /* ---------- Layout ---------- */
-.app { min-height: 100vh; display: flex; flex-wrap: wrap; }
+.app { min-height: 100vh; min-height: 100dvh; display: flex; flex-wrap: wrap; }
 .main {
   flex: 999 1 560px;
   min-width: 0;

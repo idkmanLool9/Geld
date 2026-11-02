@@ -15,6 +15,16 @@ npm run build     # production build to dist/
 npm run preview   # serve the build
 ```
 
+## Hosting
+
+- GitHub Pages via `.github/workflows/deploy.yml` (build + deploy on every push to `main`).
+  `vite.config.js` uses `base: './'` so all asset paths are relative — keep them relative
+  (no absolute `/...` URLs in code; `public/` files referenced from `index.html` are rewritten).
+- Home-screen web app: `public/manifest.webmanifest` (`display: standalone`) plus the
+  `apple-mobile-web-app-*` meta tags in `index.html` make it open full screen without browser bars.
+  `viewport-fit=cover` + `env(safe-area-inset-*)` padding on `body` keep content off the notch.
+  Icons: `public/apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`.
+
 ## Stack
 
 - Vite + React 19, plain JavaScript (no TypeScript), no UI library, no router.
