@@ -148,6 +148,20 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
 
   const cc = countryInfo(f.country).cc
 
+  // "200 Franse Francs" typed as denomination: keep the number, move the currency to its own field.
+  const splitDenom = () => {
+    const m = txt(fRef.current.denom).match(/^([\d.,'’ ]*\d(?:\s*[KkMm])?)\s+(\D.*)$/)
+    if (!m) return
+    const rest = m[2].trim()
+    const stemOf = (w) => w.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().slice(0, 4)
+    const known = unitsFor(cc).find((u) => rest.split(/\s+/).some((w) => stemOf(w) === stemOf(u.split(' ').pop())))
+    const next = { ...fRef.current, denom: m[1].replace(/\s+/g, '') }
+    if (!txt(next.unit)) next.unit = known || rest
+    touched.current.add('denom')
+    fRef.current = next
+    setF(next)
+  }
+
   // Currency unit from the country (and the year, for euro countries).
   useEffect(() => {
     if (cc !== '?') apply({ unit: guessUnit(cc, f.year) })
@@ -221,6 +235,8 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
 
   const submit = (e) => {
     e.preventDefault()
+    splitDenom()
+    const f = fRef.current
     if (!txt(f.denom) && !txt(f.country)) {
       setError('Fill in at least a country or a denomination.')
       return
@@ -346,7 +362,7 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
           </label>
           <label className="field">
             <span>Denomination</span>
-            <input className={cls('denom')} inputMode="numeric" value={f.denom} onChange={set('denom')} placeholder="e.g. 100" />
+            <input className={cls('denom')} value={f.denom} onChange={set('denom')} onBlur={splitDenom} placeholder="e.g. 100" />
           </label>
           <div className="field">
             <label className="field">

@@ -28,6 +28,9 @@ export function saveToken(token) {
 async function gh(token, method, path, body) {
   const res = await fetch(`${API}/repos/${REPO.owner}/${REPO.repo}${path}`, {
     method,
+    // Never reuse a cached answer: right after a publish, a cached branch pointer would make
+    // the next publish build on an old version, which GitHub rejects (422).
+    cache: 'no-store',
     headers: {
       Accept: 'application/vnd.github+json',
       Authorization: `Bearer ${token}`,
@@ -37,14 +40,23 @@ async function gh(token, method, path, body) {
     body: body ? JSON.stringify(body) : undefined,
   })
   if (!res.ok) {
+    let detail = ''
+    try {
+      detail = (await res.json()).message || ''
+    } catch {
+      /* no body */
+    }
     const err = new Error(
       res.status === 401
         ? 'GitHub did not accept the key. Check that it is copied completely and has not expired.'
         : res.status === 403 || res.status === 404
           ? 'This key has no write access to the Geld repository. Give it “Contents: Read and write” for that repository.'
-          : `GitHub answered with an error (${res.status}). Please try again.`,
+          : res.status === 422 && /fast.forward/i.test(detail)
+            ? 'The collection on GitHub changed while publishing. Please tap Publish again.'
+            : `GitHub answered with an error (${res.status}${detail ? `: ${detail}` : ''}). Please try again.`,
     )
     err.status = res.status
+    err.detail = detail
     throw err
   }
   return res.status === 204 ? null : res.json()
@@ -91,8 +103,12 @@ export async function publish(token, items, folders, onProgress = () => {}) {
     try {
       return await publishOnce(token, items, folders, onProgress)
     } catch (err) {
-      // Someone else published in between: start again from the new state, once.
-      if (err.status === 422 && attempt === 0) continue
+      // The branch moved in between (another publish): wait a moment and start again from the new state.
+      if (err.status === 422 && attempt < 3) {
+        onProgress('Catching up with GitHub…')
+        await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)))
+        continue
+      }
       throw err
     }
   }
