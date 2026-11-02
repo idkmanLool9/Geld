@@ -47,7 +47,14 @@ The app starts empty — there is no built-in collection. Everything the user ad
   + `public/shared/photos/*.jpg` (gitignored). On start the app fetches `shared/collection.json`;
   a new `version` replaces the device's collection — silently, unless the device has local
   changes since its last sync/export (`collection-sync` in localStorage), then it asks first.
-  To publish: replace `data/collection.json` with Levi's latest export and push to `main`.
+- **Publish button (free, GitHub):** `src/lib/github.js` writes `data/collection.json` +
+  `data/photos/<id>-<side>.jpg` straight into this repo through the GitHub Git Data API, with a
+  fine-grained token (Contents: read & write on this repo only) stored in localStorage
+  (`collection-github-token`, never exported). Unchanged photos are skipped by git blob hash;
+  photos of deleted pieces are removed. The push triggers the Pages workflow. Setup UI:
+  `components/PublishDialog.jsx`. A paid cloud database is not used: the free Supabase plan's
+  two active projects are taken by other apps.
+- Manual alternative: replace `data/collection.json` with an export and push to `main`.
 
 Item fields: `id, type ('note'|'coin'), country, cc, region, denom, unit, series, year (text),
 qty, lo, hi (EUR estimate each), face (exchange value each), status (legal|exch|demo|check),
@@ -78,6 +85,7 @@ src/
   data/currencies.js      units per country, euro legacy rates + exchange deadlines
   data/meta.js            regions + colours, statuses
   lib/store.js            IndexedDB/localStorage, photo downscaling, export/import, shared sync
+  lib/github.js           Publish: commit collection + photos to this repo (GitHub API)
   lib/autofill.js         OCR (Tesseract, on-device) + text parsing + photo colour
   lib/collection.js       prepare, filtering, sorting, totals (sumUp), countries
   lib/format.js           eur(), range(), plural()
@@ -89,6 +97,7 @@ src/
     DetailPanel.jsx       flip card, values, facts, notes, folder chips, edit/delete
     ItemForm.jsx          add / edit an item (with photo upload)
     FolderDialog.jsx      new / rename folder
+    PublishDialog.jsx     one-time GitHub key setup for Publish
     Modal.jsx             dialog shell (full-screen sheet on phones)
     NoteArt.jsx           drawn note/coin; shows item.photos.front/back when present
     Flag.jsx              flag-icons SVG per country (loaded on demand); code tile otherwise
@@ -109,6 +118,6 @@ scripts/ocr-assets.mjs    copies the OCR engine + model into public/ocr (runs be
 
 ## Ideas (not built yet)
 
-- Live sync between devices (e.g. Supabase) instead of publishing an export.
+- Live sync between devices (e.g. Supabase) — needs a free project slot.
 - CSV export.
 - Optional: Dutch UI, dark mode.

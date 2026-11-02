@@ -2,7 +2,7 @@
 // into public/shared/collection.json + one JPEG per photo, so every visitor gets the
 // same collection without downloading all photos at once. Runs before every build.
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 
 const SRC = 'data/collection.json'
 const OUT = 'public/shared'
@@ -32,6 +32,11 @@ const items = data.items.map((it) => {
       const file = `photos/${String(it.id).replace(/[^\w-]/g, '')}-${side}.${ext}`
       writeFileSync(`${OUT}/${file}`, Buffer.from(m[2], 'base64'))
       photos[side] = `shared/${file}`
+      n++
+    } else if (typeof p === 'string' && /^photos\/[\w-]+\.(jpg|png|webp)$/.test(p) && existsSync(`data/${p}`)) {
+      // Published from the app: photos are separate files in data/photos/.
+      copyFileSync(`data/${p}`, `${OUT}/${p}`)
+      photos[side] = `shared/${p}`
       n++
     } else if (p) photos[side] = p
   }

@@ -5,11 +5,13 @@ import ItemsView from './components/ItemsView.jsx'
 import DetailPanel from './components/DetailPanel.jsx'
 import ItemForm from './components/ItemForm.jsx'
 import FolderDialog from './components/FolderDialog.jsx'
+import PublishDialog from './components/PublishDialog.jsx'
 import Flag from './components/Flag.jsx'
 import Icon from './components/Icon.jsx'
 import { filterItems, getCountries, inFolder, prepare, sumUp, typeForView } from './lib/collection.js'
 import { plural } from './lib/format.js'
 import * as store from './lib/store.js'
+import * as github from './lib/github.js'
 
 // Show estimated values everywhere. Flip to false for a "values hidden" mode.
 const SHOW_VALUES = true
@@ -41,6 +43,9 @@ export default function App() {
   const [folderDialog, setFolderDialog] = useState(null) // null | 'new' | folder
 
   const [exporting, setExporting] = useState(false)
+  const [token, setToken] = useState(github.loadToken)
+  const [publishDialog, setPublishDialog] = useState(false)
+  const [toast, setToast] = useState(null) // { text, kind: 'busy'|'ok'|'error' }
 
   useEffect(() => {
     ;(async () => {
@@ -193,6 +198,40 @@ export default function App() {
       setExporting(false)
     }
   }
+  // ----- Publish (GitHub) -----
+  const publishNow = async (key = token) => {
+    if (!key) {
+      setPublishDialog(true)
+      return
+    }
+    if (!items.length) {
+      alert('There is nothing to publish yet — add a piece first.')
+      return
+    }
+    if (toast?.kind === 'busy') return
+    setToast({ kind: 'busy', text: 'Publishing…' })
+    try {
+      const raw = items.map(({ ys, dated, ...r }) => r)
+      await github.publish(key, raw, folders, (text) => setToast({ kind: 'busy', text }))
+      store.saveSync({ dirty: false })
+      setToast({ kind: 'ok', text: 'Published. Everyone sees it in about 2 minutes.' })
+    } catch (err) {
+      setToast({ kind: 'error', text: err.message || 'Publishing failed. Check your internet connection.' })
+    }
+  }
+  const saveToken = (key) => {
+    github.saveToken(key)
+    setToken(key)
+    setPublishDialog(false)
+    if (key) publishNow(key)
+  }
+  useEffect(() => {
+    if (toast && toast.kind !== 'busy') {
+      const t = setTimeout(() => setToast(null), toast.kind === 'error' ? 8000 : 5000)
+      return () => clearTimeout(t)
+    }
+  }, [toast])
+
   const importBackup = useCallback(
     async (file) => {
       try {
@@ -278,6 +317,12 @@ export default function App() {
             <Icon name="download" size={16} stroke={2} />
             {exporting ? 'Exporting…' : 'Export'}
           </button>
+          {token && (
+            <button type="button" className="secondary-btn" onClick={() => publishNow()} disabled={toast?.kind === 'busy'}>
+              <Icon name="upload" size={16} stroke={2} />
+              Publish
+            </button>
+          )}
           <button type="button" className="primary-btn" onClick={() => setEditing('new')}>
             <Icon name="plus" size={16} stroke={2.2} />
             Add item
@@ -331,6 +376,9 @@ export default function App() {
             onAdd={() => setEditing('new')}
             onNewFolder={() => setFolderDialog('new')}
             onExport={exportBackup}
+            onPublish={() => publishNow()}
+            onPublishSetup={() => setPublishDialog(true)}
+            canPublish={!!token}
             onImport={importBackup}
             showValues={SHOW_VALUES}
           />
@@ -378,6 +426,17 @@ export default function App() {
           onSave={saveItem}
           onClose={() => setEditing(null)}
         />
+      )}
+      {publishDialog && <PublishDialog token={token} onSave={saveToken} onClose={() => setPublishDialog(false)} />}
+      {toast && (
+        <div className={`toast toast-${toast.kind}`} role={toast.kind === 'error' ? 'alert' : 'status'}>
+          <span>{toast.text}</span>
+          {toast.kind !== 'busy' && (
+            <button type="button" className="toast-close" aria-label="Dismiss" onClick={() => setToast(null)}>
+              <Icon name="close" size={14} stroke={2.4} />
+            </button>
+          )}
+        </div>
       )}
       {folderDialog && <FolderDialog folder={folderDialog === 'new' ? null : folderDialog} onSave={saveFolder} onClose={() => setFolderDialog(null)} />}
     </div>

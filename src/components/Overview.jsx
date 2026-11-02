@@ -106,17 +106,33 @@ function Timeline({ items, go }) {
   )
 }
 
-function Backup({ onExport, onImport, count }) {
+function Backup({ onExport, onImport, onPublish, onPublishSetup, canPublish, count }) {
   const input = useRef(null)
   return (
     <section className="section">
-      <SectionHead title="Export & share" aside="One file with everything" />
+      <SectionHead title="Publish & share" aside="Free, through the site itself" />
       <div className="card backup">
         <p className="muted">
-          Export makes one file with every piece, photo and folder. Once that file is published on the site, everyone who opens the app
-          gets the same collection, on every device. You can also import the file yourself, for example to restore a copy.
+          <b>Publish</b> puts your collection on the site: everyone who opens the app gets the same pieces, photos and folders, on every
+          device, about 2 minutes later. <b>Export</b> makes one file with everything, to keep as a copy or to import elsewhere.
         </p>
         <div className="backup-actions">
+          {canPublish ? (
+            <>
+              <button type="button" className="primary-btn" onClick={onPublish} disabled={!count}>
+                <Icon name="upload" size={16} stroke={2} />
+                Publish now
+              </button>
+              <button type="button" className="secondary-btn" onClick={onPublishSetup}>
+                Publishing key
+              </button>
+            </>
+          ) : (
+            <button type="button" className="primary-btn" onClick={onPublishSetup}>
+              <Icon name="upload" size={16} stroke={2} />
+              Set up publishing
+            </button>
+          )}
           <button type="button" className="secondary-btn" onClick={onExport} disabled={!count}>
             <Icon name="download" size={16} stroke={2} />
             Export
@@ -158,7 +174,7 @@ function Welcome({ onAdd }) {
   )
 }
 
-export default function Overview({ items, folders, countries, go, onAdd, onNewFolder, onExport, onImport, showValues }) {
+export default function Overview({ items, folders, countries, go, onAdd, onNewFolder, onExport, onImport, onPublish, onPublishSetup, canPublish, showValues }) {
   const empty = items.length === 0
 
   const libFolders = [
@@ -235,7 +251,7 @@ export default function Overview({ items, folders, countries, go, onAdd, onNewFo
         </section>
       )}
 
-      <Backup onExport={onExport} onImport={onImport} count={items.length} />
+      <Backup onExport={onExport} onImport={onImport} onPublish={onPublish} onPublishSetup={onPublishSetup} canPublish={canPublish} count={items.length} />
     </>
   )
 }

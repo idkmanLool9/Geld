@@ -452,6 +452,20 @@ body.no-scroll { overflow: hidden; }
 .check input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
 .form-error { color: #c4271b; font-size: 14px; }
 
+/* ---------- Publish ---------- */
+.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.45; }
+.steps a { color: var(--link); }
+.small-14 { font-size: 14px; }
+.toast {
+  position: fixed; z-index: 60; left: 50%; translate: -50% 0; bottom: calc(20px + env(safe-area-inset-bottom));
+  display: flex; align-items: center; gap: 10px; width: max-content; max-width: min(520px, calc(100vw - 32px)); min-height: 48px;
+  padding: 10px 12px 10px 18px; border-radius: 16px; background: var(--text); color: #fff; font-size: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+.toast-busy { padding-right: 18px; }
+.toast-error { background: #8f2a1f; }
+.toast-close { width: 32px; height: 32px; flex: none; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.15); color: #fff; display: flex; align-items: center; justify-content: center; }
+
 /* ---------- Small screens ---------- */
 @media (max-width: 720px) {
   .main { padding: 16px 16px 40px; }

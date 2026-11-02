@@ -34,6 +34,28 @@ the data rules and what to build next.
 
 ## Share the collection with everyone
 
+**Publish (recommended):** in the app, open the overview → **Publish & share** → **Set up publishing**,
+paste a GitHub fine-grained token for this repository (Contents: Read and write), and tap **Publish**.
+About two minutes later everyone who opens the site or the home-screen app gets the same collection.
+
+**By hand:** tap **Export**, put the file in this repository as `data/collection.json` and push.
+
+## Run it locally (optional)
+
+```bash
+npm install
+npm run dev
+```
+
+Then open http://localhost:5173.
+
+## Continue in Claude Code
+
+Open a terminal in this folder and run `claude`. `CLAUDE.md` explains the structure,
+the data rules and what to build next.
+
+## Share the collection with everyone
+
 1. In the app, tap **Export** (top right). You get one file, `collection.json`, with every
    piece, photo and folder.
 2. Put that file in this repository as `data/collection.json` (send it to Claude, or on
