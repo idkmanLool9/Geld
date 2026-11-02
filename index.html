@@ -19,7 +19,14 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Replaced by the app as soon as it starts. Only stays visible if the site is served without its build. -->
+      <p style="max-width: 420px; margin: 18vh auto 0; padding: 0 24px; font: 15px/1.5 -apple-system, system-ui, sans-serif; color: #3a3a3f; text-align: center; opacity: 0; animation: show 0s 3s forwards">
+        The app did not start. If you own this site: in the GitHub repository go to
+        <b>Settings → Pages</b> and set <b>Source</b> to <b>GitHub Actions</b>.
+      </p>
+      <style>@keyframes show { to { opacity: 1 } }</style>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
