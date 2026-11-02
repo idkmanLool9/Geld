@@ -421,10 +421,28 @@ body.no-scroll { overflow: hidden; }
 .field .segmented { align-self: flex-start; }
 .field .seg { min-height: 34px; }
 .color-input { padding: 4px !important; cursor: pointer; }
-.photo-field { display: flex; flex-direction: column; gap: 8px; }
+.photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.photo-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .photo-preview, .photo-empty { width: 100%; aspect-ratio: 2.1 / 1; border-radius: 10px; overflow: hidden; background: var(--fill); }
 .photo-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.photo-empty { display: flex; align-items: center; justify-content: center; color: var(--faint); font-size: 13px; border: 1px dashed #d2d2d7; }
+.photo-empty {
+  display: flex; flex-direction: column; gap: 6px; align-items: center; justify-content: center; color: var(--link);
+  font-size: 14px; font-weight: 600; border: 1.5px dashed #c7c7cc; cursor: pointer;
+}
+.photo-empty:hover { background: #eaf3fe; }
+.form-hint { font-size: 14px; color: var(--text-2); background: var(--bg); border-radius: 12px; padding: 12px 14px; }
+.autofill-status {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px;
+  background: #eaf3fe; color: #003e80; font-size: 14px;
+}
+.autofill-status.is-error { background: #fdf0e1; color: #8f4d00; }
+.field .is-auto { background: #eef5ff; border-color: #9cc3f5; }
+.suggest { display: flex; flex-wrap: wrap; gap: 6px; }
+.suggest-chip {
+  min-height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--fill);
+  font-size: 13px; font-weight: 500; color: var(--text-2);
+}
+.suggest-chip.is-on { background: var(--accent); color: #fff; }
 .photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .check-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .check {
@@ -454,6 +472,8 @@ body.no-scroll { overflow: hidden; }
   .modal, .modal-wide { max-width: none; max-height: none; height: 100%; border-radius: 0;
     padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
   .form-grid { grid-template-columns: 1fr; }
+  .photo-empty { font-size: 13px; text-align: center; padding: 0 6px; }
+  .photo-actions .small-btn { padding: 0 10px; font-size: 13px; }
   .folder-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
   .nav-group { flex-direction: row; gap: 4px; }
   .nav-item { white-space: nowrap; min-height: 36px; padding: 0 10px; background: var(--surface); }

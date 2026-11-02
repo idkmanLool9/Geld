@@ -1,10 +1,12 @@
-import { useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Modal from './Modal.jsx'
 import NoteArt from './NoteArt.jsx'
 import Icon from './Icon.jsx'
 import { COUNTRIES, countryInfo } from '../data/countries.js'
+import { currentUnit, exchangeInfo, guessUnit, unitsFor } from '../data/currencies.js'
 import { STATUS } from '../data/meta.js'
 import { readPhoto } from '../lib/store.js'
+import { parseText, photoColor, readText } from '../lib/autofill.js'
 
 const EMPTY = {
   type: 'note',
@@ -26,12 +28,16 @@ const EMPTY = {
   folders: [],
   photos: {},
 }
+const LABELS = { country: 'country', denom: 'denomination', unit: 'currency unit', year: 'year', color: 'colour', status: 'status', face: 'exchange value', where: 'where to exchange' }
+const COPY_KEYS = ['series', 'year', 'front', 'back', 'lo', 'hi', 'status', 'face', 'where', 'color']
 
 const txt = (v) => String(v ?? '').trim()
 const num = (v) => {
   const n = parseFloat(String(v).replace(',', '.'))
   return Number.isFinite(n) && n >= 0 ? n : 0
 }
+const same = (a, b) => txt(a).toLowerCase() === txt(b).toLowerCase()
+const isDefault = (k, v) => v === EMPTY[k] || v === '' || v == null
 
 function PhotoField({ side, value, onChange, setError }) {
   const input = useRef(null)
@@ -53,7 +59,10 @@ function PhotoField({ side, value, onChange, setError }) {
           <img src={value} alt={`${side} preview`} />
         </div>
       ) : (
-        <div className="photo-empty">No photo</div>
+        <button type="button" className="photo-empty" onClick={() => input.current.click()}>
+          <Icon name="camera" size={22} stroke={1.8} />
+          {side === 'front' ? 'Add the front' : 'Add the back'}
+        </button>
       )}
       <div className="photo-actions">
         <button type="button" className="secondary-btn small-btn" onClick={() => input.current.click()}>
@@ -71,7 +80,7 @@ function PhotoField({ side, value, onChange, setError }) {
   )
 }
 
-export default function ItemForm({ item, folders, defaultFolder, onSave, onClose }) {
+export default function ItemForm({ item, items = [], folders, defaultFolder, onSave, onClose }) {
   const [f, setF] = useState(() => ({
     ...EMPTY,
     ...item,
@@ -79,10 +88,136 @@ export default function ItemForm({ item, folders, defaultFolder, onSave, onClose
     folders: item ? [...(item.folders || [])] : defaultFolder ? [defaultFolder] : [],
   }))
   const [error, setError] = useState('')
-  const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
-  const setPhoto = (side) => (v) => setF({ ...f, photos: { ...f.photos, [side]: v || undefined } })
+  const [ocr, setOcr] = useState(null) // null | { state: 'loading'|'reading'|'done'|'error', progress, filled }
+  const [copyDismissed, setCopyDismissed] = useState(false)
+
+  // Auto-fill bookkeeping: fields the user typed in are never overwritten; auto-filled ones are
+  // highlighted until edited. When editing an existing piece, everything already filled counts as typed.
+  const fRef = useRef(f)
+  fRef.current = f
+  const touched = useRef(new Set(item ? Object.keys(item).filter((k) => !isDefault(k, item[k])).concat('status') : []))
+  const autoRef = useRef(new Set())
+  const [auto, setAuto] = useState(new Set())
+
+  /** Fill fields that the user has not filled in; returns the keys it changed. */
+  const apply = (patch) => {
+    const cur = fRef.current
+    const next = { ...cur }
+    const changed = []
+    for (const [k, v] of Object.entries(patch)) {
+      if (v == null || v === '' || touched.current.has(k)) continue
+      if (!isDefault(k, cur[k]) && !autoRef.current.has(k)) continue
+      if (String(cur[k]) === String(v)) continue
+      next[k] = v
+      changed.push(k)
+      autoRef.current.add(k)
+    }
+    if (changed.length) {
+      fRef.current = next
+      setF(next)
+      setAuto(new Set(autoRef.current))
+    }
+    return changed
+  }
+  /** Clear auto-filled fields that no longer apply. */
+  const unapply = (keys) => {
+    const cur = fRef.current
+    const next = { ...cur }
+    let any = false
+    for (const k of keys) {
+      if (autoRef.current.has(k) && !touched.current.has(k)) {
+        next[k] = EMPTY[k]
+        autoRef.current.delete(k)
+        any = true
+      }
+    }
+    if (any) {
+      fRef.current = next
+      setF(next)
+      setAuto(new Set(autoRef.current))
+    }
+  }
+
+  const userSet = (k, v) => {
+    touched.current.add(k)
+    autoRef.current.delete(k)
+    setAuto(new Set(autoRef.current))
+    setF((prev) => ({ ...prev, [k]: v }))
+  }
+  const set = (k) => (e) => userSet(k, e.target.value)
+
+  const cc = countryInfo(f.country).cc
+
+  // Currency unit from the country (and the year, for euro countries).
+  useEffect(() => {
+    if (cc !== '?') apply({ unit: guessUnit(cc, f.year) })
+  }, [cc, f.year]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Status, exchange value and where to exchange for old euro-area banknotes / current money.
+  useEffect(() => {
+    const info = exchangeInfo(cc, f.unit, f.denom, f.type)
+    if (info) apply({ status: info.status, face: info.face || '', where: info.where, note: info.note })
+    else if (cc !== '?' && same(f.unit, currentUnit(cc))) {
+      unapply(['face', 'where'])
+      apply({ status: 'legal' })
+    } else unapply(['status', 'face', 'where'])
+  }, [cc, f.unit, f.denom, f.type]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reading a new photo: colour + text (country, denomination, year, unit).
+  const readPhotoInfo = async (side, dataUrl) => {
+    const filled = []
+    if (side === 'front' || isDefault('color', fRef.current.color)) {
+      const color = await photoColor(dataUrl)
+      filled.push(...apply({ color }))
+    }
+    setOcr({ state: 'loading', progress: 0, filled })
+    try {
+      const text = await readText(dataUrl, (m) => {
+        if (m.status === 'recognizing text') setOcr((o) => ({ ...o, state: 'reading', progress: m.progress }))
+      })
+      const known = countryInfo(fRef.current.country).cc
+      const found = parseText(text, known !== '?' ? known : null)
+      if (found.cc) {
+        const name = COUNTRIES.find((c) => c.cc === found.cc)?.name
+        filled.push(...apply({ country: name }))
+      }
+      filled.push(...apply({ denom: found.denom, year: found.year }))
+      if (found.unit) filled.push(...apply({ unit: found.unit }))
+      setOcr({ state: 'done', filled: [...new Set(filled)] })
+    } catch {
+      setOcr({ state: 'error', filled })
+    }
+  }
+
+  const setPhoto = (side) => (v) => {
+    setF((prev) => ({ ...prev, photos: { ...prev.photos, [side]: v || undefined } }))
+    if (v) readPhotoInfo(side, v)
+  }
   const toggleFolder = (id) =>
     setF({ ...f, folders: f.folders.includes(id) ? f.folders.filter((x) => x !== id) : [...f.folders, id] })
+
+  // Same piece already in the collection? Offer to copy its details.
+  const twin = useMemo(
+    () =>
+      txt(f.denom) && txt(f.country)
+        ? items.find((it) => it.id !== f.id && same(it.country, f.country) && same(it.denom, f.denom) && (!txt(f.unit) || same(it.unit, f.unit)))
+        : null,
+    [items, f.id, f.country, f.denom, f.unit],
+  )
+  const copyTwin = () => {
+    apply(Object.fromEntries(COPY_KEYS.map((k) => [k, twin[k]])))
+    setCopyDismissed(true)
+  }
+
+  // Suggestions: this country's currencies and the series already used for it.
+  const unitOptions = useMemo(() => {
+    const own = items.filter((it) => same(it.country, f.country)).map((it) => it.unit)
+    return [...new Set([...unitsFor(cc), ...own].filter(Boolean))]
+  }, [cc, items, f.country])
+  const seriesOptions = useMemo(
+    () => [...new Set(items.filter((it) => same(it.country, f.country) && (!f.unit || same(it.unit, f.unit))).map((it) => it.series).filter(Boolean))],
+    [items, f.country, f.unit],
+  )
 
   const submit = (e) => {
     e.preventDefault()
@@ -116,6 +251,7 @@ export default function ItemForm({ item, folders, defaultFolder, onSave, onClose
     })
   }
 
+  const cls = (k) => (auto.has(k) ? 'is-auto' : undefined)
   const preview = { ...f, qty: 1 }
 
   return (
@@ -135,9 +271,42 @@ export default function ItemForm({ item, folders, defaultFolder, onSave, onClose
       }
     >
       <form id="item-form" className="form" onSubmit={submit} noValidate>
-        <div className="form-preview">
-          <NoteArt item={preview} size="large" />
+        {!item && !f.photos.front && <p className="form-hint">Start with a photo: country, denomination, currency, year and colour are read from it and filled in for you.</p>}
+
+        <div className="photo-grid">
+          <PhotoField side="front" value={f.photos.front} onChange={setPhoto('front')} setError={setError} />
+          <PhotoField side="back" value={f.photos.back} onChange={setPhoto('back')} setError={setError} />
         </div>
+
+        {ocr && (
+          <div className={`autofill-status ${ocr.state === 'error' ? 'is-error' : ''}`} role="status">
+            {ocr.state === 'loading' && 'Getting the text reader ready… (the first time takes a moment)'}
+            {ocr.state === 'reading' && `Reading the text on the photo… ${Math.round((ocr.progress || 0) * 100)}%`}
+            {ocr.state === 'done' &&
+              (ocr.filled.length
+                ? `Filled in from the photo: ${ocr.filled.map((k) => LABELS[k] || k).join(', ')}. Check the blue fields.`
+                : 'No new details could be read from this photo. A sharper, straight photo helps.')}
+            {ocr.state === 'error' && 'The text on the photo could not be read here (no internet?). Fill in the fields yourself.'}
+          </div>
+        )}
+
+        {twin && !copyDismissed && (
+          <div className="autofill-status">
+            <span className="grow">
+              You already have a {[twin.denom, twin.unit].filter(Boolean).join(' ')} from {twin.country}
+              {twin.series ? ` (${twin.series})` : ''}.
+            </span>
+            <button type="button" className="secondary-btn small-btn" onClick={copyTwin}>
+              Copy its details
+            </button>
+          </div>
+        )}
+
+        {!f.photos.front && (
+          <div className="form-preview">
+            <NoteArt item={preview} size="large" />
+          </div>
+        )}
 
         <div className="field">
           <span className="field-label" id="type-label">
@@ -148,7 +317,7 @@ export default function ItemForm({ item, folders, defaultFolder, onSave, onClose
               ['note', 'Banknote'],
               ['coin', 'Coin'],
             ].map(([v, l]) => (
-              <button key={v} type="button" className={`seg ${f.type === v ? 'is-on' : ''}`} aria-pressed={f.type === v} onClick={() => setF({ ...f, type: v })}>
+              <button key={v} type="button" className={`seg ${f.type === v ? 'is-on' : ''}`} aria-pressed={f.type === v} onClick={() => userSet('type', v)}>
                 {l}
               </button>
             ))}
@@ -158,16 +327,16 @@ export default function ItemForm({ item, folders, defaultFolder, onSave, onClose
         <div className="form-grid">
           <label className="field">
             <span>Country</span>
-            <input list="country-list" value={f.country} onChange={set('country')} placeholder="e.g. Belgium" autoComplete="off" />
+            <input className={cls('country')} list="country-list" value={f.country} onChange={set('country')} placeholder="e.g. Belgium" autoComplete="off" />
             <datalist id="country-list">
               {COUNTRIES.map((c) => (
-                <option key={c.cc} value={c.name} />
+                <option key={c.cc + c.name} value={c.name} />
               ))}
             </datalist>
           </label>
           <label className="field">
             <span>Status</span>
-            <select value={f.status} onChange={set('status')}>
+            <select className={cls('status')} value={f.status} onChange={set('status')}>
               {Object.entries(STATUS).map(([k, s]) => (
                 <option key={k} value={k}>
                   {s.label}
@@ -177,19 +346,40 @@ export default function ItemForm({ item, folders, defaultFolder, onSave, onClose
           </label>
           <label className="field">
             <span>Denomination</span>
-            <input value={f.denom} onChange={set('denom')} placeholder="e.g. 100" />
+            <input className={cls('denom')} inputMode="numeric" value={f.denom} onChange={set('denom')} placeholder="e.g. 100" />
           </label>
-          <label className="field">
-            <span>Currency unit</span>
-            <input value={f.unit} onChange={set('unit')} placeholder="e.g. Frank" />
-          </label>
+          <div className="field">
+            <label className="field">
+              <span>Currency unit</span>
+              <input className={cls('unit')} list="unit-list" value={f.unit} onChange={set('unit')} placeholder="e.g. Frank" autoComplete="off" />
+            </label>
+            <datalist id="unit-list">
+              {unitOptions.map((u) => (
+                <option key={u} value={u} />
+              ))}
+            </datalist>
+            {unitOptions.length > 1 && (
+              <div className="suggest">
+                {unitOptions.map((u) => (
+                  <button key={u} type="button" className={`suggest-chip ${same(u, f.unit) ? 'is-on' : ''}`} onClick={() => userSet('unit', u)}>
+                    {u}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <label className="field">
             <span>Series</span>
-            <input value={f.series} onChange={set('series')} placeholder="e.g. Constant Permeke" />
+            <input className={cls('series')} list="series-list" value={f.series} onChange={set('series')} placeholder="e.g. Constant Permeke" autoComplete="off" />
+            <datalist id="series-list">
+              {seriesOptions.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
           </label>
           <label className="field">
             <span>Year</span>
-            <input value={f.year} onChange={set('year')} placeholder="e.g. 1997 or 1973–1994" />
+            <input className={cls('year')} value={f.year} onChange={set('year')} placeholder="e.g. 1997 or 1973–1994" />
           </label>
           <label className="field">
             <span>Quantity</span>
@@ -197,46 +387,41 @@ export default function ItemForm({ item, folders, defaultFolder, onSave, onClose
           </label>
           <label className="field">
             <span>Colour</span>
-            <input type="color" value={f.color} onChange={set('color')} className="color-input" />
+            <input type="color" value={f.color} onChange={set('color')} className={`color-input ${cls('color') || ''}`} />
           </label>
           <label className="field">
             <span>Value from (€ each)</span>
-            <input inputMode="decimal" value={f.lo} onChange={set('lo')} placeholder="0" />
+            <input className={cls('lo')} inputMode="decimal" value={f.lo} onChange={set('lo')} placeholder="0" />
           </label>
           <label className="field">
             <span>Value to (€ each)</span>
-            <input inputMode="decimal" value={f.hi} onChange={set('hi')} placeholder="same as from" />
+            <input className={cls('hi')} inputMode="decimal" value={f.hi} onChange={set('hi')} placeholder="same as from" />
           </label>
           {f.status === 'exch' && (
             <>
               <label className="field">
                 <span>Exchange value (€ each)</span>
-                <input inputMode="decimal" value={f.face} onChange={set('face')} placeholder="0" />
+                <input className={cls('face')} inputMode="decimal" value={f.face} onChange={set('face')} placeholder="0" />
               </label>
               <label className="field">
                 <span>Where to exchange</span>
-                <input value={f.where} onChange={set('where')} placeholder="Bank, address, deadline" />
+                <input className={cls('where')} value={f.where} onChange={set('where')} placeholder="Bank, address, deadline" />
               </label>
             </>
           )}
           <label className="field">
             <span>Front shows</span>
-            <input value={f.front} onChange={set('front')} placeholder="Portrait, building…" />
+            <input className={cls('front')} value={f.front} onChange={set('front')} placeholder="Portrait, building…" />
           </label>
           <label className="field">
             <span>Back shows</span>
-            <input value={f.back} onChange={set('back')} placeholder="Landscape, animal…" />
+            <input className={cls('back')} value={f.back} onChange={set('back')} placeholder="Landscape, animal…" />
           </label>
-        </div>
-
-        <div className="form-grid">
-          <PhotoField side="front" value={f.photos.front} onChange={setPhoto('front')} setError={setError} />
-          <PhotoField side="back" value={f.photos.back} onChange={setPhoto('back')} setError={setError} />
         </div>
 
         <label className="field">
           <span>Notes</span>
-          <textarea rows={3} value={f.note} onChange={set('note')} placeholder="Condition, where you got it, things to check…" />
+          <textarea className={cls('note')} rows={3} value={f.note} onChange={set('note')} placeholder="Condition, where you got it, things to check…" />
         </label>
 
         <div className="field">

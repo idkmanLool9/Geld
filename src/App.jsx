@@ -372,6 +372,7 @@ export default function App() {
       {editing && (
         <ItemForm
           item={editing === 'new' ? null : editing}
+          items={items}
           folders={folders}
           defaultFolder={isFolder && folder && editing === 'new' ? folder.id : null}
           onSave={saveItem}

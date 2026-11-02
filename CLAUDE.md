@@ -55,14 +55,30 @@ where, color, front, back, note, photos { front, back }, folders [], fav, create
 `cc`/`region` are derived from the country name (`src/data/countries.js`); `ys`/`dated` are
 derived at load time (`prepare()` in `src/lib/collection.js`) and not stored.
 
+## Auto-fill (free, on-device)
+
+Nothing here may cost money: no paid APIs, no keys. In the Add/Edit form:
+- **Photo → text:** Tesseract OCR runs in the browser (`src/lib/autofill.js`); its worker, wasm
+  core and English model are copied into `public/ocr/` by `scripts/ocr-assets.mjs` (gitignored)
+  and served by the site itself. `parseText()` finds the issuer/country, denomination, year and
+  currency word. The photo's main colour fills the colour field.
+- **Currency:** `src/data/currencies.js` — current + older units per country, `guessUnit()`,
+  and `exchangeInfo()` with the official euro rates and central-bank exchange deadlines
+  (status, exchange value in EUR, where).
+- **Same piece already owned:** offers to copy its details. Series suggestions come from the collection.
+- Auto-filled fields are highlighted (`.is-auto`) and never overwrite what the user typed.
+- Collector values cannot be looked up for free; they stay the user's own estimate.
+
 ## Structure
 
 ```
 src/
   App.jsx                 state, storage, routing, page header, top bar, dialogs
   data/countries.js       all ISO countries + historical issuers, region, flag, aliases
+  data/currencies.js      units per country, euro legacy rates + exchange deadlines
   data/meta.js            regions + colours, statuses
   lib/store.js            IndexedDB/localStorage, photo downscaling, export/import, shared sync
+  lib/autofill.js         OCR (Tesseract, on-device) + text parsing + photo colour
   lib/collection.js       prepare, filtering, sorting, totals (sumUp), countries
   lib/format.js           eur(), range(), plural()
   components/
@@ -78,6 +94,7 @@ src/
     Flag.jsx              flag-icons SVG per country (loaded on demand); code tile otherwise
     Icon.jsx, Segmented.jsx
 scripts/publish.mjs       data/collection.json → public/shared (runs before dev/build)
+scripts/ocr-assets.mjs    copies the OCR engine + model into public/ocr (runs before dev/build)
 ```
 
 ## Design rules
