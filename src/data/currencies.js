@@ -101,6 +101,9 @@ UY:UYU UZ:UZS VA:EUR VC:XCD VE:VES VG:USD VI:USD VN:VND VU:VUV WF:XPF WS:WST XK:
 GB-SCT:GBP GB-NIR:GBP BWA:XOF BEAC:XAF ECS:XCD`
 const CODE_BY_CC = Object.fromEntries(CODES.split(/\s+/).map((p) => p.split(':')))
 
+/** Issuers that no longer exist (Yugoslavia, Soviet Union, …): their money is never legal tender. */
+export const isFormerIssuer = (cc) => !!CURRENT_BY_CC[cc] && !CODE_BY_CC[cc]
+
 /** ISO code when `unit` is the country's current currency, else null. */
 export function currencyCode(cc, unit) {
   const now = CURRENT_BY_CC[cc]

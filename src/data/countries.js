@@ -29,7 +29,7 @@ const EXTRA = [
   { cc: 'DR', name: 'German Empire', region: 'Western Europe', flag: null },
   { cc: 'DD', name: 'East Germany', region: 'Eastern Europe', flag: null },
   { cc: 'SU', name: 'Soviet Union', region: 'Eastern Europe', flag: null },
-  { cc: 'YU', name: 'Yugoslavia', region: 'Eastern Europe', flag: null },
+  { cc: 'YU', name: 'Yugoslavia', region: 'Eastern Europe', flag: 'yu' },
   { cc: 'CS', name: 'Czechoslovakia', region: 'Eastern Europe', flag: null },
   { cc: 'SCG', name: 'Serbia and Montenegro', region: 'Eastern Europe', flag: null },
   { cc: 'OT', name: 'Ottoman Empire', region: 'Middle East & Turkey', flag: null },

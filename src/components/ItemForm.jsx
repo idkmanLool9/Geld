@@ -3,7 +3,7 @@ import Modal from './Modal.jsx'
 import NoteArt from './NoteArt.jsx'
 import Icon from './Icon.jsx'
 import { COUNTRIES, countryInfo } from '../data/countries.js'
-import { currencyCode, currentUnit, exchangeInfo, guessUnit, legalTenderAdvice, parseDenom, unitsFor } from '../data/currencies.js'
+import { currencyCode, exchangeInfo, isFormerIssuer, guessUnit, legalTenderAdvice, parseDenom, unitsFor } from '../data/currencies.js'
 import { getRates, toEuro } from '../lib/rates.js'
 import { STATUS } from '../data/meta.js'
 import { readPhoto } from '../lib/store.js'
@@ -172,8 +172,11 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
   useEffect(() => {
     const info = exchangeInfo(cc, f.unit, f.denom, f.type)
     if (info) apply({ status: info.status, face: info.face || '', where: info.where, note: info.note })
-    else if (cc !== '?' && same(f.unit, currentUnit(cc))) apply({ status: 'legal' })
-    else unapply(['status', 'face', 'where'])
+    else if (currencyCode(cc, f.unit)) apply({ status: 'legal' })
+    else if (isFormerIssuer(cc)) {
+      unapply(['face', 'where'])
+      apply({ status: 'demo' })
+    } else unapply(['status', 'face', 'where'])
   }, [cc, f.unit, f.denom, f.type]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Still legal tender: today's value in euro (live rate) and how to turn it into money.

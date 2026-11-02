@@ -105,6 +105,7 @@ src/
     Modal.jsx             dialog shell (full-screen sheet on phones)
     NoteArt.jsx           drawn note/coin; shows item.photos.front/back when present
     Flag.jsx              flag-icons SVG per country (loaded on demand); code tile otherwise
+  flags/<code>.svg        own flags for former states (e.g. yu = Yugoslavia), 4:3 like flag-icons
     Icon.jsx, Segmented.jsx
 scripts/publish.mjs       data/collection.json → public/shared (runs before dev/build)
 scripts/rates.mjs         saves today's exchange rates as public/rates.json (build only)
