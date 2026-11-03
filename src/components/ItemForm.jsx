@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Modal from './Modal.jsx'
 import NoteArt from './NoteArt.jsx'
 import Icon from './Icon.jsx'
-import { COUNTRIES, countryInfo } from '../data/countries.js'
+import { COUNTRIES, canonicalCountry, countryInfo } from '../data/countries.js'
 import { currencyCode, exchangeInfo, isFormerIssuer, guessUnit, legalTenderAdvice, parseDenom, unitsFor } from '../data/currencies.js'
 import { getRates, toEuro } from '../lib/rates.js'
+import { fmtDate } from '../lib/format.js'
 import { STATUS } from '../data/meta.js'
 import { readPhoto } from '../lib/store.js'
 import { parseText, photoColor, readText } from '../lib/autofill.js'
@@ -30,10 +31,12 @@ const EMPTY = {
   folders: [],
   photos: {},
 }
-const LABELS = { country: 'country', denom: 'denomination', unit: 'currency unit', year: 'year', color: 'colour', status: 'status', face: 'exchange value', where: 'where to exchange' }
+const LABELS = { country: 'land', denom: 'nominale waarde', unit: 'munteenheid', year: 'jaar', color: 'kleur', status: 'status', face: 'geldwaarde', where: 'inwisselinfo' }
 const COPY_KEYS = ['series', 'year', 'front', 'back', 'lo', 'hi', 'status', 'face', 'where', 'color']
 
 const txt = (v) => String(v ?? '').trim()
+// Amounts in the form use a Dutch decimal comma ("24,79"); num() reads both.
+const dec = (v) => (v === '' || v == null ? '' : String(v).replace('.', ','))
 const num = (v) => {
   const n = parseFloat(String(v).replace(',', '.'))
   return Number.isFinite(n) && n >= 0 ? n : 0
@@ -55,7 +58,7 @@ function PhotoField({ side, value, coin, onChange, setError }) {
   }
   return (
     <div className="photo-field">
-      <span className="field-label">{side === 'front' ? 'Front photo' : 'Back photo'}</span>
+      <span className="field-label">{side === 'front' ? 'Foto voorkant' : 'Foto achterkant'}</span>
       {value ? (
         <div className={`photo-preview ${coin ? 'photo-preview-coin' : ''}`}>
           <img src={value} alt={`${side} preview`} />
@@ -63,17 +66,17 @@ function PhotoField({ side, value, coin, onChange, setError }) {
       ) : (
         <button type="button" className="photo-empty" onClick={() => input.current.click()}>
           <Icon name="camera" size={22} stroke={1.8} />
-          {side === 'front' ? 'Add the front' : 'Add the back'}
+          {side === 'front' ? 'Voorkant toevoegen' : 'Achterkant toevoegen'}
         </button>
       )}
       <div className="photo-actions">
         <button type="button" className="secondary-btn small-btn" onClick={() => input.current.click()}>
           <Icon name="camera" size={15} stroke={2} />
-          {value ? 'Replace' : 'Add photo'}
+          {value ? 'Vervangen' : 'Foto toevoegen'}
         </button>
         {value && (
           <button type="button" className="secondary-btn small-btn danger" onClick={() => onChange(null)}>
-            Remove
+            Verwijderen
           </button>
         )}
       </div>
@@ -86,6 +89,7 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
   const [f, setF] = useState(() => ({
     ...EMPTY,
     ...item,
+    ...(item ? { lo: item.lo ? dec(item.lo) : '', hi: item.hi ? dec(item.hi) : '', face: item.face ? dec(item.face) : '' } : {}),
     photos: { ...(item?.photos || {}) },
     folders: item ? [...(item.folders || [])] : defaultFolder ? [defaultFolder] : [],
   }))
@@ -173,7 +177,7 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
   // Status, exchange value and where to exchange for old euro-area banknotes / current money.
   useEffect(() => {
     const info = exchangeInfo(cc, f.unit, f.denom, f.type)
-    if (info) apply({ status: info.status, face: info.face || '', where: info.where, note: info.note })
+    if (info) apply({ status: info.status, face: dec(info.face || ''), where: info.where, note: info.note })
     else if (currencyCode(cc, f.unit)) apply({ status: 'legal' })
     else if (isFormerIssuer(cc)) {
       unapply(['face', 'where'])
@@ -196,9 +200,9 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
       if (gone) return
       const v = toEuro(r, code, n)
       if (v != null) {
-        apply({ face: v })
-        setRateNote(code === 'EUR' ? '' : `Rate of ${r.date}: 1 EUR = ${r.rates[code.toLowerCase()]} ${code}.`)
-      } else setRateNote(r ? `No exchange rate found for ${code}.` : 'Exchange rates could not be loaded (no internet?).')
+        apply({ face: dec(v) })
+        setRateNote(code === 'EUR' ? '' : `Koers van ${fmtDate(r.date)}: 1 EUR = ${String(r.rates[code.toLowerCase()]).replace('.', ',')} ${code}.`)
+      } else setRateNote(r ? `Geen wisselkoers gevonden voor ${code}.` : 'Wisselkoersen konden niet geladen worden (geen internet?).')
     })
     return () => {
       gone = true
@@ -247,7 +251,7 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
     [items, f.id, f.country, f.denom, f.unit],
   )
   const copyTwin = () => {
-    apply(Object.fromEntries(COPY_KEYS.map((k) => [k, twin[k]])))
+    apply(Object.fromEntries(COPY_KEYS.map((k) => [k, ['lo', 'hi', 'face'].includes(k) ? (twin[k] ? dec(twin[k]) : '') : twin[k]])))
     setCopyDismissed(true)
   }
 
@@ -266,12 +270,12 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
     splitDenom()
     const f = fRef.current
     if (!txt(f.denom) && !txt(f.country)) {
-      setError('Fill in at least a country or a denomination.')
+      setError('Vul minstens een land of een nominale waarde in.')
       return
     }
     const lo = num(f.lo)
     const hi = f.hi === '' ? lo : num(f.hi)
-    const country = txt(f.country)
+    const country = canonicalCountry(txt(f.country))
     const photos = {}
     if (f.photos.front) photos.front = f.photos.front
     if (f.photos.back) photos.back = f.photos.back
@@ -302,21 +306,21 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
   return (
     <Modal
       wide
-      title={item ? 'Edit item' : 'Add item'}
+      title={item ? 'Stuk bewerken' : 'Stuk toevoegen'}
       onClose={onClose}
       footer={
         <>
           <button type="button" className="secondary-btn" onClick={onClose}>
-            Cancel
+            Annuleren
           </button>
           <button type="submit" form="item-form" className="primary-btn">
-            {item ? 'Save changes' : 'Add to collection'}
+            {item ? 'Wijzigingen opslaan' : 'Aan collectie toevoegen'}
           </button>
         </>
       }
     >
       <form id="item-form" className="form" onSubmit={submit} noValidate>
-        {!item && !f.photos.front && <p className="form-hint">Start with a photo: country, denomination, currency, year and colour are read from it and filled in for you.</p>}
+        {!item && !f.photos.front && <p className="form-hint">Begin met een foto: land, nominale waarde, munteenheid, jaar en kleur worden eruit gelezen en voor je ingevuld.</p>}
 
         <div className="photo-grid">
           <PhotoField side="front" value={f.photos.front} coin={f.type === 'coin'} onChange={setPhoto('front')} setError={setError} />
@@ -325,24 +329,24 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
 
         {ocr && (
           <div className={`autofill-status ${ocr.state === 'error' ? 'is-error' : ''}`} role="status">
-            {ocr.state === 'loading' && 'Getting the text reader ready… (the first time takes a moment)'}
-            {ocr.state === 'reading' && `Reading the text on the photo… ${Math.round((ocr.progress || 0) * 100)}%`}
+            {ocr.state === 'loading' && 'Tekstlezer wordt klaargezet… (de eerste keer duurt even)'}
+            {ocr.state === 'reading' && `Tekst op de foto lezen… ${Math.round((ocr.progress || 0) * 100)}%`}
             {ocr.state === 'done' &&
               (ocr.filled.length
-                ? `Filled in from the photo: ${ocr.filled.map((k) => LABELS[k] || k).join(', ')}. Check the blue fields.`
-                : 'No new details could be read from this photo. A sharper, straight photo helps.')}
-            {ocr.state === 'error' && 'The text on the photo could not be read here (no internet?). Fill in the fields yourself.'}
+                ? `Ingevuld vanaf de foto: ${ocr.filled.map((k) => LABELS[k] || k).join(', ')}. Controleer de blauwe velden.`
+                : 'Er kon niets nieuws van deze foto gelezen worden. Een scherpere, rechte foto helpt.')}
+            {ocr.state === 'error' && 'De tekst op de foto kon niet gelezen worden (geen internet?). Vul de velden zelf in.'}
           </div>
         )}
 
         {twin && !copyDismissed && (
           <div className="autofill-status">
             <span className="grow">
-              You already have a {[twin.denom, twin.unit].filter(Boolean).join(' ')} from {twin.country}
+              Je hebt al een {[twin.denom, twin.unit].filter(Boolean).join(' ')} uit {twin.country}
               {twin.series ? ` (${twin.series})` : ''}.
             </span>
             <button type="button" className="secondary-btn small-btn" onClick={copyTwin}>
-              Copy its details
+              Gegevens overnemen
             </button>
           </div>
         )}
@@ -355,12 +359,12 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
 
         <div className="field">
           <span className="field-label" id="type-label">
-            Type
+            Soort
           </span>
           <div className="segmented" role="group" aria-labelledby="type-label">
             {[
-              ['note', 'Banknote'],
-              ['coin', 'Coin'],
+              ['note', 'Bankbiljet'],
+              ['coin', 'Munt'],
             ].map(([v, l]) => (
               <button key={v} type="button" className={`seg ${f.type === v ? 'is-on' : ''}`} aria-pressed={f.type === v} onClick={() => userSet('type', v)}>
                 {l}
@@ -371,8 +375,8 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
 
         <div className="form-grid">
           <label className="field">
-            <span>Country</span>
-            <input className={cls('country')} list="country-list" value={f.country} onChange={set('country')} placeholder="e.g. Belgium" autoComplete="off" />
+            <span>Land</span>
+            <input className={cls('country')} list="country-list" value={f.country} onChange={set('country')} placeholder="bv. België" autoComplete="off" />
             <datalist id="country-list">
               {COUNTRIES.map((c) => (
                 <option key={c.cc + c.name} value={c.name} />
@@ -390,13 +394,13 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
             </select>
           </label>
           <label className="field">
-            <span>Denomination</span>
-            <input className={cls('denom')} value={f.denom} onChange={set('denom')} onBlur={splitDenom} placeholder="e.g. 100" />
+            <span>Nominale waarde</span>
+            <input className={cls('denom')} value={f.denom} onChange={set('denom')} onBlur={splitDenom} placeholder="bv. 100" />
           </label>
           <div className="field">
             <label className="field">
-              <span>Currency unit</span>
-              <input className={cls('unit')} list="unit-list" value={f.unit} onChange={set('unit')} placeholder="e.g. Frank" autoComplete="off" />
+              <span>Munteenheid</span>
+              <input className={cls('unit')} list="unit-list" value={f.unit} onChange={set('unit')} placeholder="bv. Frank" autoComplete="off" />
             </label>
             <datalist id="unit-list">
               {unitOptions.map((u) => (
@@ -414,8 +418,8 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
             )}
           </div>
           <label className="field">
-            <span>Series</span>
-            <input className={cls('series')} list="series-list" value={f.series} onChange={set('series')} placeholder="e.g. Constant Permeke" autoComplete="off" />
+            <span>Serie</span>
+            <input className={cls('series')} list="series-list" value={f.series} onChange={set('series')} placeholder="bv. Constant Permeke" autoComplete="off" />
             <datalist id="series-list">
               {seriesOptions.map((s) => (
                 <option key={s} value={s} />
@@ -423,45 +427,45 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
             </datalist>
           </label>
           <label className="field">
-            <span>Year</span>
-            <input className={cls('year')} value={f.year} onChange={set('year')} placeholder="e.g. 1997 or 1973–1994" />
+            <span>Jaar</span>
+            <input className={cls('year')} value={f.year} onChange={set('year')} placeholder="bv. 1997 of 1973–1994" />
           </label>
           <label className="field">
-            <span>Quantity</span>
+            <span>Aantal</span>
             <input type="number" inputMode="numeric" min="1" step="1" value={f.qty} onChange={set('qty')} />
           </label>
           <label className="field">
-            <span>Colour</span>
+            <span>Kleur</span>
             <input type="color" value={f.color} onChange={set('color')} className={`color-input ${cls('color') || ''}`} />
           </label>
           <label className="field">
-            <span>Value from (€ each)</span>
+            <span>Waarde van (€ per stuk)</span>
             <input className={cls('lo')} inputMode="decimal" value={f.lo} onChange={set('lo')} placeholder="0" />
           </label>
           <label className="field">
-            <span>Value to (€ each)</span>
-            <input className={cls('hi')} inputMode="decimal" value={f.hi} onChange={set('hi')} placeholder="same as from" />
+            <span>Waarde tot (€ per stuk)</span>
+            <input className={cls('hi')} inputMode="decimal" value={f.hi} onChange={set('hi')} placeholder="zelfde als van" />
           </label>
           {(f.status === 'exch' || f.status === 'legal') && (
             <>
               <label className="field">
-                <span>{f.status === 'legal' ? 'Worth in euro today (each)' : 'Exchange value (€ each)'}</span>
+                <span>{f.status === 'legal' ? 'Vandaag waard in euro (per stuk)' : 'Inwisselwaarde (€ per stuk)'}</span>
                 <input className={cls('face')} inputMode="decimal" value={f.face} onChange={set('face')} placeholder="0" />
                 {f.status === 'legal' && rateNote && <span className="field-note">{rateNote}</span>}
               </label>
               <label className="field">
-                <span>{f.status === 'legal' ? 'How to cash it' : 'Where to exchange'}</span>
-                <textarea className={cls('where')} rows={3} value={f.where} onChange={set('where')} placeholder="Bank, address, deadline" />
+                <span>{f.status === 'legal' ? 'Zo maak je er geld van' : 'Waar inwisselen'}</span>
+                <textarea className={cls('where')} rows={3} value={f.where} onChange={set('where')} placeholder="Bank, adres, einddatum" />
               </label>
             </>
           )}
           <label className="field">
-            <span>Front shows</span>
-            <input className={cls('front')} value={f.front} onChange={set('front')} placeholder="Portrait, building…" />
+            <span>Op de voorkant</span>
+            <input className={cls('front')} value={f.front} onChange={set('front')} placeholder="Portret, gebouw…" />
           </label>
           <label className="field">
-            <span>Back shows</span>
-            <input className={cls('back')} value={f.back} onChange={set('back')} placeholder="Landscape, animal…" />
+            <span>Op de achterkant</span>
+            <input className={cls('back')} value={f.back} onChange={set('back')} placeholder="Landschap, dier…" />
           </label>
         </div>
 
@@ -475,28 +479,28 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
                 if (!e.target.checked) userSet('tag', '')
               }}
             />
-            Add a tag
+            Label toevoegen
           </label>
           {tagOn && (
             <input
               value={f.tag}
               onChange={set('tag')}
-              placeholder="e.g. Special serial number"
+              placeholder="bv. Speciaal serienummer"
               maxLength={28}
-              aria-label="Tag text"
+              aria-label="Tekst van het label"
               autoFocus
             />
           )}
-          <span className="field-note">Shown as a small label on the top right of the piece, so it stands out.</span>
+          <span className="field-note">Verschijnt als klein label rechtsboven op het stuk, zodat het opvalt.</span>
         </div>
 
         <label className="field">
-          <span>Notes</span>
-          <textarea className={cls('note')} rows={3} value={f.note} onChange={set('note')} placeholder="Condition, where you got it, things to check…" />
+          <span>Notities</span>
+          <textarea className={cls('note')} rows={3} value={f.note} onChange={set('note')} placeholder="Staat, waar je het kreeg, wat je nog moet nakijken…" />
         </label>
 
         <div className="field">
-          <span className="field-label">Folders</span>
+          <span className="field-label">Mappen</span>
           {folders.length ? (
             <div className="check-list">
               {folders.map((fo) => (
@@ -507,7 +511,7 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
               ))}
             </div>
           ) : (
-            <span className="muted small">No folders yet. Create one with “New folder” on the overview.</span>
+            <span className="muted small">Nog geen mappen. Maak er een met “Nieuwe map” op het overzicht.</span>
           )}
         </div>
 

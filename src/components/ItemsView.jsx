@@ -19,29 +19,29 @@ export function StatusPill({ status }) {
 function Summary({ list, showValues }) {
   const st = sumUp(list)
   return (
-    <section className="summary" aria-label="Summary">
+    <section className="summary" aria-label="Samenvatting">
       <div className="card summary-tile">
-        <span className="muted small">Pieces</span>
+        <span className="muted small">Stuks</span>
         <span className="summary-value">{st.pieces}</span>
-        <span className="muted small">{plural(list.length, 'entry', 'entries')}</span>
+        <span className="muted small">{plural(list.length, 'item', 'items')}</span>
       </div>
       <div className="card summary-tile">
-        <span className="muted small">Countries</span>
+        <span className="muted small">Landen</span>
         <span className="summary-value">{st.nC}</span>
         <span className="muted small">{plural(st.nR, 'region')}</span>
       </div>
       {showValues && (
         <>
           <div className="card summary-tile">
-            <span className="muted small">Estimated value</span>
+            <span className="muted small">Geschatte waarde</span>
             <span className="summary-value">{st.hi > 0 ? range(st.lo, st.hi) : '—'}</span>
-            <span className="muted small">{st.valued < st.pieces ? `${plural(st.valued, 'piece')} valued` : 'Your estimates'}</span>
+            <span className="muted small">{st.valued < st.pieces ? `${plural(st.valued, 'stuk', 'stuks')} gewaardeerd` : 'Je eigen schattingen'}</span>
           </div>
           {st.faceN > 0 && (
           <div className="card summary-tile">
-            <span className="muted small">Cash value</span>
+            <span className="muted small">Geldwaarde</span>
             <span className="summary-value">{eur(st.face)}</span>
-            <span className="muted small">{plural(st.faceN, 'piece')} exchangeable or legal tender</span>
+            <span className="muted small">{plural(st.faceN, 'stuk', 'stuks')} inwisselbaar of wettig betaalmiddel</span>
           </div>
           )}
         </>
@@ -59,8 +59,8 @@ function Card({ it, selected, fav, showValues, onSelect }) {
       </span>
       <span className="item-text">
         <span className="item-name">
-          {[it.denom, it.unit].filter(Boolean).join(' ') || 'Untitled'}
-          {fav && <Icon name="star" size={14} fill="#E8890C" stroke={0} role="img" aria-label="Favorite" aria-hidden={undefined} />}
+          {[it.denom, it.unit].filter(Boolean).join(' ') || 'Naamloos'}
+          {fav && <Icon name="star" size={14} fill="#E8890C" stroke={0} role="img" aria-label="Favoriet" aria-hidden={undefined} />}
         </span>
         <span className="item-sub">
           <Flag cc={it.cc} width={16} height={11} radius={2} />
@@ -83,13 +83,13 @@ function Table({ list, sel, showValues, onSelect }) {
       <table className="table">
         <thead>
           <tr>
-            <th scope="col">Item</th>
-            <th scope="col">Country</th>
-            <th scope="col">Year</th>
-            <th scope="col">Qty</th>
+            <th scope="col">Stuk</th>
+            <th scope="col">Land</th>
+            <th scope="col">Jaar</th>
+            <th scope="col">Aantal</th>
             <th scope="col">Status</th>
             <th scope="col" className="right">
-              Value
+              Waarde
             </th>
           </tr>
         </thead>
@@ -99,7 +99,7 @@ function Table({ list, sel, showValues, onSelect }) {
               <td>
                 <button type="button" className="row-button" onClick={() => onSelect(it.id)}>
                   <span className={it.type === 'coin' ? 'thumb thumb-coin' : 'thumb'} style={{ background: it.color }} />
-                  <span className="strong">{[it.denom, it.unit].filter(Boolean).join(' ') || 'Untitled'}</span>
+                  <span className="strong">{[it.denom, it.unit].filter(Boolean).join(' ') || 'Naamloos'}</span>
                   {it.tag && <span className="tag-pill">{it.tag}</span>}
                 </button>
               </td>
@@ -131,33 +131,33 @@ export default function ItemsView({ view, list, type, setType, sort, setSort, la
 
       <div className="toolbar">
         <Segmented
-          label="Type"
+          label="Soort"
           value={type}
           onChange={setType}
           options={[
-            { value: 'all', label: 'All' },
-            { value: 'note', label: 'Banknotes' },
-            { value: 'coin', label: 'Coins' },
+            { value: 'all', label: 'Alles' },
+            { value: 'note', label: 'Biljetten' },
+            { value: 'coin', label: 'Munten' },
           ]}
         />
         <div className="grow" />
         <label className="sort">
-          Sort by
+          Sorteren op
           <select value={sort} onChange={(e) => setSort(e.target.value)}>
-            <option value="value">Value</option>
-            <option value="country">Country</option>
-            <option value="year">Year</option>
-            <option value="added">Recently added</option>
+            <option value="value">Waarde</option>
+            <option value="country">Land</option>
+            <option value="year">Jaar</option>
+            <option value="added">Laatst toegevoegd</option>
           </select>
         </label>
         <Segmented
-          label="Layout"
+          label="Weergave"
           icons
           value={layout}
           onChange={setLayout}
           options={[
-            { value: 'grid', label: <Icon name="grid" size={16} stroke={2} />, ariaLabel: 'Grid view' },
-            { value: 'list', label: <Icon name="list" size={16} stroke={2} />, ariaLabel: 'List view' },
+            { value: 'grid', label: <Icon name="grid" size={16} stroke={2} />, ariaLabel: 'Rasterweergave' },
+            { value: 'list', label: <Icon name="list" size={16} stroke={2} />, ariaLabel: 'Lijstweergave' },
           ]}
         />
       </div>
@@ -170,21 +170,21 @@ export default function ItemsView({ view, list, type, setType, sort, setSort, la
                 <FolderGraphic />
               </div>
               <span className="empty-title">
-                {total === 0 ? 'Your collection is empty' : view === 'favorites' && !query ? 'No favorites yet' : view.startsWith('folder:') && !query ? 'This folder is empty' : 'Nothing here'}
+                {total === 0 ? 'Je collectie is leeg' : view === 'favorites' && !query ? 'Nog geen favorieten' : view.startsWith('folder:') && !query ? 'Deze map is leeg' : 'Niets gevonden'}
               </span>
               <span className="muted">
                 {total === 0
-                  ? 'Add your first banknote or coin to get started.'
+                  ? 'Voeg je eerste bankbiljet of munt toe om te beginnen.'
                   : view === 'favorites' && !query
-                    ? 'Open any piece and tap the star to keep it here.'
+                    ? 'Open een stuk en tik op de ster om het hier te bewaren.'
                     : view.startsWith('folder:') && !query
-                      ? 'Open a piece, tap Edit and tick this folder to add it.'
-                      : 'No pieces match this view. Try another type, or clear the search.'}
+                      ? 'Open een stuk, tik op Bewerken en vink deze map aan.'
+                      : 'Geen stukken in deze weergave. Kies een andere soort of wis de zoekopdracht.'}
               </span>
               {total === 0 && (
                 <button type="button" className="primary-btn" onClick={onAdd}>
                   <Icon name="plus" size={16} stroke={2.2} />
-                  Add item
+                  Stuk toevoegen
                 </button>
               )}
             </div>

@@ -1,14 +1,39 @@
 import { range } from './format.js'
+import { canonicalCountry } from '../data/countries.js'
+import { currencyCode, exchangeInfo, legalTenderAdvice } from '../data/currencies.js'
+
+// Texts the app once filled in automatically in English: replace them with the Dutch version.
+// Anything the user typed themselves is left alone.
+const OLD_LEGAL = /^(Still valid money|Euro: spend it)/
+const OLD_EXCH = /Check that this series is still accepted\.$/
+const OLD_ENDED = /^Exchange at the central bank ended on /
+function dutchTexts(it) {
+  const out = {}
+  if (it.where && OLD_LEGAL.test(it.where)) {
+    const code = currencyCode(it.cc, it.unit)
+    if (code) out.where = legalTenderAdvice(code, it.country, it.type)
+  } else if (it.where && OLD_EXCH.test(it.where)) {
+    const info = exchangeInfo(it.cc, it.unit, it.denom, it.type)
+    if (info?.where) out.where = info.where
+  }
+  if (it.note && OLD_ENDED.test(it.note)) {
+    const info = exchangeInfo(it.cc, it.unit, it.denom, it.type)
+    if (info?.note) out.note = it.note.replace(/^Exchange at the central bank ended on [^.]*\./, info.note)
+  }
+  return out
+}
 
 /** Fill in derived fields (sortable year, dated) for a stored item. */
 export function prepare(it) {
   const m = String(it.year || '').match(/\d{4}/)
-  return { ...it, ys: m ? +m[0] : null, dated: !!m }
+  // Show every known country under its Dutch name ("France" from older data → "Frankrijk").
+  const country = canonicalCountry(it.country)
+  return { ...it, ...dutchTexts({ ...it, country }), country, ys: m ? +m[0] : null, dated: !!m }
 }
 
 export const decadeOf = (it) => Math.floor(it.ys / 10) * 10
 export const inFolder = (it, folderId) => (it.folders || []).includes(folderId)
-export const countryKey = (it) => it.country || 'Unknown'
+export const countryKey = (it) => it.country || 'Onbekend'
 
 /** Totals for a set of items. */
 export function sumUp(items) {
@@ -76,8 +101,8 @@ export function filterItems(items, { view, type, query, sort }) {
 }
 
 export function valueLabel(it) {
-  if (!it.lo && !it.hi) return (it.status === 'exch' || it.status === 'legal') && it.face > 0 ? '≈ ' + range(it.face, it.face) : 'Unknown'
-  return range(it.lo || 0, it.hi || it.lo) + (it.qty > 1 ? ' ea.' : '')
+  if (!it.lo && !it.hi) return (it.status === 'exch' || it.status === 'legal') && it.face > 0 ? '≈ ' + range(it.face, it.face) : 'Onbekend'
+  return range(it.lo || 0, it.hi || it.lo) + (it.qty > 1 ? ' p/st' : '')
 }
 
 export const typeForView = (v) => (v === 'coins' ? 'coin' : v === 'notes' ? 'note' : 'all')

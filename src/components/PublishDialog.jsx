@@ -18,54 +18,54 @@ export default function PublishDialog({ token, onSave, onClose }) {
       await checkToken(clean)
       onSave(clean)
     } catch (err) {
-      setState(err.message || 'Could not reach GitHub.')
+      setState(err.message || 'GitHub is niet bereikbaar.')
     }
   }
 
   return (
     <Modal
-      title="Publish to everyone"
+      title="Publiceren voor iedereen"
       onClose={onClose}
       footer={
         <>
           {token && (
             <button type="button" className="secondary-btn danger" onClick={() => onSave('')}>
-              Remove key
+              Sleutel verwijderen
             </button>
           )}
           <button type="button" className="secondary-btn" onClick={onClose}>
-            Cancel
+            Annuleren
           </button>
           <button type="submit" form="publish-form" className="primary-btn" disabled={!clean || state === 'checking'}>
-            {state === 'checking' ? 'Checking…' : 'Save key'}
+            {state === 'checking' ? 'Controleren…' : 'Sleutel opslaan'}
           </button>
         </>
       }
     >
       <form id="publish-form" className="form" onSubmit={save}>
         <p className="muted small-14">
-          Publishing puts your collection on the site, so everyone sees the same pieces and photos. It is free and uses the
-          GitHub repository that hosts the site. You need a key once:
+          Publiceren zet je collectie op de site, zodat iedereen dezelfde stukken en foto's ziet. Het is gratis en gebruikt de
+          GitHub-repository waarop de site staat. Je hebt eenmalig een sleutel nodig:
         </p>
         <ol className="steps">
           <li>
             Open{' '}
             <a href={NEW_TOKEN_URL} target="_blank" rel="noreferrer">
-              GitHub → new fine-grained token
+              GitHub → nieuwe fine-grained token
             </a>{' '}
-            (sign in if asked).
+            (log in als dat gevraagd wordt).
           </li>
-          <li>Name it “Collection”, and set an expiration (up to a year).</li>
+          <li>Noem hem “Collectie” en kies een vervaldatum (maximaal een jaar).</li>
           <li>
-            Under <b>Repository access</b> choose <b>Only select repositories</b> → <b>{REPO.repo}</b>.
+            Kies bij <b>Repository access</b> voor <b>Only select repositories</b> → <b>{REPO.repo}</b>.
           </li>
           <li>
-            Under <b>Permissions → Repository permissions</b> set <b>Contents</b> to <b>Read and write</b>.
+            Zet bij <b>Permissions → Repository permissions</b> de optie <b>Contents</b> op <b>Read and write</b>.
           </li>
-          <li>Generate the token, copy it, and paste it below.</li>
+          <li>Klik op <b>Generate token</b>, kopieer hem en plak hem hieronder.</li>
         </ol>
         <label className="field">
-          <span>GitHub key</span>
+          <span>GitHub-sleutel</span>
           <input
             type="password"
             value={value}
@@ -79,7 +79,7 @@ export default function PublishDialog({ token, onSave, onClose }) {
             spellCheck={false}
           />
         </label>
-        <p className="muted small">The key is stored only on this device and is never part of an export or of the published collection.</p>
+        <p className="muted small">De sleutel staat alleen op dit toestel en zit nooit in een export of in de gepubliceerde collectie.</p>
         {state && state !== 'checking' && (
           <p className="form-error" role="alert">
             {state}

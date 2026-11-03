@@ -16,7 +16,7 @@ import * as github from './lib/github.js'
 // Show estimated values everywhere. Flip to false for a "values hidden" mode.
 const SHOW_VALUES = true
 
-const TITLES = { home: 'My Collection', all: 'All items', notes: 'Banknotes', coins: 'Coins', favorites: 'Favorites' }
+const TITLES = { home: 'Mijn collectie', all: 'Alle stukken', notes: 'Bankbiljetten', coins: 'Munten', favorites: 'Favorieten' }
 
 const readHash = () => {
   try {
@@ -53,7 +53,7 @@ export default function App() {
       try {
         local = await store.loadItems()
       } catch {
-        setLoadError('This browser blocks storage, so pieces cannot be saved here (private browsing?).')
+        setLoadError('Deze browser blokkeert opslag, dus stukken kunnen hier niet bewaard worden (privévenster?).')
       }
       setItems(local.map(prepare))
       setLoaded(true)
@@ -66,8 +66,8 @@ export default function App() {
       if (
         changedHere &&
         !confirm(
-          `A new version of the collection is available (${plural(shared.items.length, 'entry', 'entries')}). ` +
-            'Load it? Pieces you added or changed on this device only will be replaced.',
+          `Er is een nieuwe versie van de collectie (${plural(shared.items.length, 'item', 'items')}). ` +
+            'Laden? Stukken die je alleen op dit toestel hebt toegevoegd of gewijzigd, worden dan vervangen.',
         )
       ) {
         store.saveSync({ declined: shared.version })
@@ -120,7 +120,7 @@ export default function App() {
   // ----- Item changes (state first, then device storage) -----
   const persist = (p) => {
     store.saveSync({ dirty: true })
-    return p.catch(() => alert('Saving failed — the device storage may be full.'))
+    return p.catch(() => alert('Opslaan mislukt — de opslag van dit toestel is misschien vol.'))
   }
 
   const saveItem = (data) => {
@@ -152,7 +152,7 @@ export default function App() {
 
   const deleteItem = (it) => {
     const name = [it.denom, it.unit].filter(Boolean).join(' ') || 'this piece'
-    if (!confirm(`Delete ${name}${it.country ? ` (${it.country})` : ''}? This cannot be undone.`)) return
+    if (!confirm(`${name}${it.country ? ` (${it.country})` : ''} verwijderen? Dit kan niet ongedaan worden.`)) return
     persist(store.removeItem(it.id))
     setItems((prev) => prev.filter((x) => x.id !== it.id))
     setSel(null)
@@ -176,7 +176,7 @@ export default function App() {
     }
   }
   const deleteFolder = (folder) => {
-    if (!confirm(`Delete the folder “${folder.name}”? The pieces in it stay in your collection.`)) return
+    if (!confirm(`De map “${folder.name}” verwijderen? De stukken erin blijven in je collectie.`)) return
     writeFolders(folders.filter((f) => f.id !== folder.id))
     for (const it of items) if (inFolder(it, folder.id)) updateItem(it.id, { folders: it.folders.filter((x) => x !== folder.id) })
     go('home')
@@ -185,7 +185,7 @@ export default function App() {
   // ----- Backup -----
   const exportBackup = async () => {
     if (!items.length) {
-      alert('There is nothing to export yet — add a piece first.')
+      alert('Er is nog niets om te exporteren — voeg eerst een stuk toe.')
       return
     }
     setExporting(true)
@@ -193,7 +193,7 @@ export default function App() {
       // This device now matches the exported file: once it is published, no "replace?" question here.
       if (await store.exportCollection(items.map(({ ys, dated, ...raw }) => raw), folders)) store.saveSync({ dirty: false })
     } catch {
-      alert('Export failed. Please try again.')
+      alert('Exporteren mislukt. Probeer het opnieuw.')
     } finally {
       setExporting(false)
     }
@@ -205,18 +205,18 @@ export default function App() {
       return
     }
     if (!items.length) {
-      alert('There is nothing to publish yet — add a piece first.')
+      alert('Er is nog niets om te publiceren — voeg eerst een stuk toe.')
       return
     }
     if (toast?.kind === 'busy') return
-    setToast({ kind: 'busy', text: 'Publishing…' })
+    setToast({ kind: 'busy', text: 'Publiceren…' })
     try {
       const raw = items.map(({ ys, dated, ...r }) => r)
       await github.publish(key, raw, folders, (text) => setToast({ kind: 'busy', text }))
       store.saveSync({ dirty: false })
-      setToast({ kind: 'ok', text: 'Published. Everyone sees it in about 2 minutes.' })
+      setToast({ kind: 'ok', text: 'Gepubliceerd. Iedereen ziet het over ongeveer 2 minuten.' })
     } catch (err) {
-      setToast({ kind: 'error', text: err.message || 'Publishing failed. Check your internet connection.' })
+      setToast({ kind: 'error', text: err.message || 'Publiceren mislukt. Controleer je internetverbinding.' })
     }
   }
   const saveToken = (key) => {
@@ -237,8 +237,8 @@ export default function App() {
       try {
         const data = await store.readBackup(file)
         const msg = items.length
-          ? `Replace your current collection (${plural(items.length, 'entry', 'entries')}) with the ${plural(data.items.length, 'entry', 'entries')} in this backup?`
-          : `Import ${plural(data.items.length, 'entry', 'entries')} from this backup?`
+          ? `Je huidige collectie (${plural(items.length, 'item', 'items')}) vervangen door de ${plural(data.items.length, 'item', 'items')} uit deze back-up?`
+          : `${plural(data.items.length, 'item', 'items')} uit deze back-up importeren?`
         if (!confirm(msg)) return
         await store.replaceItems(data.items)
         store.saveFolders(data.folders)
@@ -247,7 +247,7 @@ export default function App() {
         setFolders(data.folders)
         go('home')
       } catch (err) {
-        alert(err instanceof SyntaxError ? 'This file could not be read as a backup.' : err.message || 'Import failed.')
+        alert(err instanceof SyntaxError ? 'Dit bestand kon niet als back-up gelezen worden.' : err.message || 'Importeren mislukt.')
       }
     },
     [items.length],
@@ -266,13 +266,13 @@ export default function App() {
   const all = sumUp(items)
   const st = sumUp(list)
 
-  const title = TITLES[view] || folder?.name || (isCountry ? view.slice(8) : '') || (isDecade ? `The ${view.slice(7)}s` : '') || 'Not found'
+  const title = TITLES[view] || folder?.name || (isCountry ? view.slice(8) : '') || (isDecade ? `De jaren ${view.slice(7)}` : '') || 'Niet gevonden'
   const subtitle = isHome
     ? items.length
-      ? `${plural(all.pieces, 'piece')} from ${plural(all.nC, 'country', 'countries')}.`
-      : 'Banknotes and coins, all in one place.'
-    : `${plural(st.pieces, 'piece')} · ${plural(st.nC, 'country', 'countries')}`
-  const crumb = isCountry ? 'Countries' : isDecade ? 'Through time' : isFolder ? 'Folders' : 'Library'
+      ? `${plural(all.pieces, 'stuk', 'stuks')} uit ${plural(all.nC, 'land', 'landen')}.`
+      : 'Bankbiljetten en munten, alles op één plek.'
+    : `${plural(st.pieces, 'stuk', 'stuks')} · ${plural(st.nC, 'land', 'landen')}`
+  const crumb = isCountry ? 'Landen' : isDecade ? 'Door de tijd' : isFolder ? 'Mappen' : 'Bibliotheek'
 
   const counts = {
     all: all.pieces,
@@ -301,11 +301,11 @@ export default function App() {
         <div className="topbar">
           <label className="search">
             <Icon name="search" size={16} stroke={2} />
-            <span className="sr-only">Search the collection</span>
+            <span className="sr-only">Zoek in de collectie</span>
             <input
               type="search"
               value={query}
-              placeholder="Search country, note, person, year…"
+              placeholder="Zoek op land, biljet, persoon, jaar…"
               onChange={(e) => {
                 setQuery(e.target.value)
                 if (isHome && e.target.value) setView('all')
@@ -315,17 +315,17 @@ export default function App() {
           <div className="grow" />
           <button type="button" className="secondary-btn" onClick={exportBackup} disabled={exporting}>
             <Icon name="download" size={16} stroke={2} />
-            {exporting ? 'Exporting…' : 'Export'}
+            {exporting ? 'Exporteren…' : 'Exporteren'}
           </button>
           {token && (
             <button type="button" className="secondary-btn" onClick={() => publishNow()} disabled={toast?.kind === 'busy'}>
               <Icon name="upload" size={16} stroke={2} />
-              Publish
+              Publiceren
             </button>
           )}
           <button type="button" className="primary-btn" onClick={() => setEditing('new')}>
             <Icon name="plus" size={16} stroke={2.2} />
-            Add item
+            Stuk toevoegen
           </button>
         </div>
 
@@ -337,10 +337,10 @@ export default function App() {
 
         <header className="page-head">
           {!isHome && (
-            <nav aria-label="Breadcrumb" className="crumbs">
+            <nav aria-label="Kruimelpad" className="crumbs">
               <button type="button" className="crumb-back" onClick={() => go('home')}>
                 <Icon name="back" size={16} stroke={2.2} />
-                Overview
+                Overzicht
               </button>
               <span className="crumb-sep">/</span>
               <span className="muted">{crumb}</span>
@@ -357,11 +357,11 @@ export default function App() {
             <div className="page-actions">
               <button type="button" className="secondary-btn small-btn" onClick={() => setFolderDialog(folder)}>
                 <Icon name="edit" size={15} stroke={2} />
-                Rename
+                Hernoemen
               </button>
               <button type="button" className="secondary-btn small-btn danger" onClick={() => deleteFolder(folder)}>
                 <Icon name="trash" size={15} stroke={2} />
-                Delete folder
+                Map verwijderen
               </button>
             </div>
           )}
@@ -432,7 +432,7 @@ export default function App() {
         <div className={`toast toast-${toast.kind}`} role={toast.kind === 'error' ? 'alert' : 'status'}>
           <span>{toast.text}</span>
           {toast.kind !== 'busy' && (
-            <button type="button" className="toast-close" aria-label="Dismiss" onClick={() => setToast(null)}>
+            <button type="button" className="toast-close" aria-label="Sluiten" onClick={() => setToast(null)}>
               <Icon name="close" size={14} stroke={2.4} />
             </button>
           )}

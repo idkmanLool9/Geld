@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import Folder, { FolderGraphic, NewFolder } from './Folder.jsx'
 import Icon from './Icon.jsx'
-import { REGION_ORDER, REGION_COLORS } from '../data/meta.js'
+import { REGION_ORDER, REGION_COLORS, regionLabel } from '../data/meta.js'
 import { sumUp, inFolder, decadeOf } from '../lib/collection.js'
 import { eur, range, plural } from '../lib/format.js'
 
@@ -30,27 +30,27 @@ function Hero({ items, showValues }) {
     (r) => r.t.pieces > 0,
   )
   return (
-    <section className="card hero" aria-label="Collection summary">
+    <section className="card hero" aria-label="Samenvatting van de collectie">
       <div className="hero-main">
-        <span className="muted">{showValues ? 'Estimated collection value' : 'Pieces in the collection'}</span>
+        <span className="muted">{showValues ? 'Geschatte waarde van de collectie' : 'Stukken in de collectie'}</span>
         <span className="hero-big">{showValues ? range(all.lo, all.hi) : all.pieces}</span>
         <span className="muted">
-          {all.valued < all.pieces ? `Based on ${plural(all.valued, 'piece')} with a value filled in.` : 'Your own estimates, added up.'}
+          {all.valued < all.pieces ? `Op basis van ${plural(all.valued, 'stuk', 'stuks')} met een ingevulde waarde.` : 'Je eigen schattingen, opgeteld.'}
         </span>
         <div className="hero-stats">
-          <Stat value={all.pieces} label="Pieces" />
-          <Stat value={all.nC} label={all.nC === 1 ? 'Country' : 'Countries'} />
-          {years.length > 0 && <Stat value={`${Math.min(...years)}–${Math.max(...years)}`} label="Years covered" />}
-          {showValues && all.faceN > 0 && <Stat value={eur(all.face)} label="Cash value" />}
+          <Stat value={all.pieces} label="Stuks" />
+          <Stat value={all.nC} label={all.nC === 1 ? 'Land' : 'Landen'} />
+          {years.length > 0 && <Stat value={`${Math.min(...years)}–${Math.max(...years)}`} label="Periode" />}
+          {showValues && all.faceN > 0 && <Stat value={eur(all.face)} label="Geldwaarde" />}
         </div>
       </div>
       {regions.length > 0 && (
         <div className="hero-regions">
           <div className="row-between">
-            <span className="strong">Where it comes from</span>
-            <span className="muted small">Share of pieces by region</span>
+            <span className="strong">Waar het vandaan komt</span>
+            <span className="muted small">Aandeel stuks per regio</span>
           </div>
-          <div className="region-bar" role="img" aria-label={regions.map((r) => `${r.name} ${r.t.pieces}`).join(', ')}>
+          <div className="region-bar" role="img" aria-label={regions.map((r) => `${regionLabel(r.name)} ${r.t.pieces}`).join(', ')}>
             {regions.map((r) => (
               <span key={r.name} style={{ flex: `${r.t.pieces} 1 0`, background: r.color }} />
             ))}
@@ -59,8 +59,8 @@ function Hero({ items, showValues }) {
             {regions.map((r) => (
               <div key={r.name} className="legend-row">
                 <span className="dot" style={{ background: r.color }} />
-                <span className="grow">{r.name}</span>
-                <span className="muted legend-num">{plural(r.t.pieces, 'piece')}</span>
+                <span className="grow">{regionLabel(r.name)}</span>
+                <span className="muted legend-num">{plural(r.t.pieces, 'stuk', 'stuks')}</span>
                 {showValues && <span className="strong legend-val">{r.t.hi > 0 ? range(r.t.lo, r.t.hi) : '—'}</span>}
               </div>
             ))}
@@ -74,7 +74,7 @@ function Hero({ items, showValues }) {
 function Timeline({ items, go }) {
   const dated = items.filter((it) => it.dated)
   if (!dated.length) {
-    return <p className="card muted timeline-empty">Add a year to your pieces to see them here, decade by decade.</p>
+    return <p className="card muted timeline-empty">Vul bij je stukken een jaar in om ze hier per tien jaar te zien.</p>
   }
   const first = Math.min(...dated.map(decadeOf))
   const last = Math.max(...dated.map(decadeOf))
@@ -97,8 +97,8 @@ function Timeline({ items, go }) {
                 />
               ))}
             </div>
-            <span className="decade-label">{y}s</span>
-            <span className="muted xsmall">{n ? plural(n, 'piece') : 'None yet'}</span>
+            <span className="decade-label">{y}–{String(y + 9).slice(2)}</span>
+            <span className="muted xsmall">{n ? plural(n, 'stuk', 'stuks') : 'Nog geen'}</span>
           </button>
         ))}
       </div>
@@ -110,36 +110,36 @@ function Backup({ onExport, onImport, onPublish, onPublishSetup, canPublish, cou
   const input = useRef(null)
   return (
     <section className="section">
-      <SectionHead title="Publish & share" aside="Free, through the site itself" />
+      <SectionHead title="Publiceren & delen" aside="Gratis, via de site zelf" />
       <div className="card backup">
         <p className="muted">
-          <b>Publish</b> puts your collection on the site: everyone who opens the app gets the same pieces, photos and folders, on every
-          device, about 2 minutes later. <b>Export</b> makes one file with everything, to keep as a copy or to import elsewhere.
+          <b>Publiceren</b> zet je collectie op de site: iedereen die de app opent krijgt dezelfde stukken, foto's en mappen, op elk
+          toestel, ongeveer 2 minuten later. <b>Exporteren</b> maakt één bestand met alles, om te bewaren of elders te importeren.
         </p>
         <div className="backup-actions">
           {canPublish ? (
             <>
               <button type="button" className="primary-btn" onClick={onPublish} disabled={!count}>
                 <Icon name="upload" size={16} stroke={2} />
-                Publish now
+                Nu publiceren
               </button>
               <button type="button" className="secondary-btn" onClick={onPublishSetup}>
-                Publishing key
+                Publicatiesleutel
               </button>
             </>
           ) : (
             <button type="button" className="primary-btn" onClick={onPublishSetup}>
               <Icon name="upload" size={16} stroke={2} />
-              Set up publishing
+              Publiceren instellen
             </button>
           )}
           <button type="button" className="secondary-btn" onClick={onExport} disabled={!count}>
             <Icon name="download" size={16} stroke={2} />
-            Export
+            Exporteren
           </button>
           <button type="button" className="secondary-btn" onClick={() => input.current.click()}>
             <Icon name="upload" size={16} stroke={2} />
-            Import
+            Importeren
           </button>
           <input
             ref={input}
@@ -164,11 +164,11 @@ function Welcome({ onAdd }) {
       <div className="empty-folder">
         <FolderGraphic />
       </div>
-      <h2>Start your collection</h2>
-      <p className="muted">Add your first banknote or coin. Photos, values and folders are all optional — you can fill them in later.</p>
+      <h2>Begin je collectie</h2>
+      <p className="muted">Voeg je eerste bankbiljet of munt toe. Foto’s, waarden en mappen zijn allemaal optioneel — die kun je later invullen.</p>
       <button type="button" className="primary-btn" onClick={onAdd}>
         <Icon name="plus" size={16} stroke={2.2} />
-        Add first item
+        Eerste stuk toevoegen
       </button>
     </section>
   )
@@ -178,16 +178,16 @@ export default function Overview({ items, folders, countries, go, onAdd, onNewFo
   const empty = items.length === 0
 
   const libFolders = [
-    { key: 'notes', name: 'Banknotes', icon: 'note', its: items.filter((it) => it.type === 'note') },
-    { key: 'coins', name: 'Coins', icon: 'coin', its: items.filter((it) => it.type === 'coin') },
-    { key: 'favorites', name: 'Favorites', icon: 'star', its: items.filter((it) => it.fav) },
+    { key: 'notes', name: 'Bankbiljetten', icon: 'note', its: items.filter((it) => it.type === 'note') },
+    { key: 'coins', name: 'Munten', icon: 'coin', its: items.filter((it) => it.type === 'coin') },
+    { key: 'favorites', name: 'Favorieten', icon: 'star', its: items.filter((it) => it.fav) },
     ...folders.map((f) => ({ key: 'folder:' + f.id, name: f.name, icon: null, its: items.filter((it) => inFolder(it, f.id)) })),
   ].map((fd) => {
     const t = sumUp(fd.its)
     let meta
-    if (fd.key === 'favorites' && !fd.its.length) meta = 'Star a piece to add it'
-    else if (!fd.its.length) meta = 'Empty'
-    else meta = showValues && t.hi > 0 ? range(t.lo, t.hi) : plural(t.pieces, 'piece')
+    if (fd.key === 'favorites' && !fd.its.length) meta = 'Geef een stuk een ster'
+    else if (!fd.its.length) meta = 'Leeg'
+    else meta = showValues && t.hi > 0 ? range(t.lo, t.hi) : plural(t.pieces, 'stuk', 'stuks')
     return { ...fd, badge: t.pieces, meta }
   })
 
@@ -201,7 +201,7 @@ export default function Overview({ items, folders, countries, go, onAdd, onNewFo
       {empty ? <Welcome onAdd={onAdd} /> : <Hero items={items} showValues={showValues} />}
 
       <section className="section">
-        <SectionHead title="Collections" aside="By type and your own folders" />
+        <SectionHead title="Collecties" aside="Per soort en je eigen mappen" />
         <div className="card folder-grid">
           {libFolders.map((f) => (
             <Folder key={f.key} name={f.name} meta={f.meta} items={f.its} icon={f.icon} badge={f.badge} onClick={() => go(f.key)} />
@@ -212,17 +212,17 @@ export default function Overview({ items, folders, countries, go, onAdd, onNewFo
 
       {groups.length > 0 && (
         <section className="section">
-          <SectionHead title="Countries" aside={`${plural(countries.length, 'country', 'countries')} · ${plural(groups.length, 'region')}`} />
+          <SectionHead title="Landen" aside={`${plural(countries.length, 'land', 'landen')} · ${plural(groups.length, 'regio', "regio's")}`} />
           <div className="region-wrap">
             {groups.map((g) => (
               <div key={g.name} className="card region-card" style={{ flex: `${g.cs.length} 1 ${Math.min(g.cs.length, 4) * 188 + 24}px` }}>
                 <div className="region-head">
                   <h3>
                     <span className="dot" style={{ background: REGION_COLORS[g.name] }} />
-                    {g.name}
+                    {regionLabel(g.name)}
                   </h3>
                   <span className="muted small">
-                    {plural(g.cs.length, 'country', 'countries')} · {plural(g.t.pieces, 'piece')}
+                    {plural(g.cs.length, 'land', 'landen')} · {plural(g.t.pieces, 'stuk', 'stuks')}
                   </span>
                 </div>
                 <div className="folder-grid">
@@ -230,7 +230,7 @@ export default function Overview({ items, folders, countries, go, onAdd, onNewFo
                     <Folder
                       key={c.key}
                       name={c.name}
-                      meta={showValues && c.hi > 0 ? range(c.lo, c.hi) : plural(c.pieces, 'piece')}
+                      meta={showValues && c.hi > 0 ? range(c.lo, c.hi) : plural(c.pieces, 'stuk', 'stuks')}
                       items={c.items}
                       cc={c.cc}
                       badge={c.pieces}
@@ -246,7 +246,7 @@ export default function Overview({ items, folders, countries, go, onAdd, onNewFo
 
       {!empty && (
         <section className="section">
-          <SectionHead title="Through time" aside="Pieces by decade of issue" />
+          <SectionHead title="Door de tijd" aside="Stuks per decennium van uitgifte" />
           <Timeline items={items} go={go} />
         </section>
       )}

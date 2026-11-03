@@ -54,8 +54,8 @@ export function NewFolder({ onClick }) {
         <Icon name="plus" size={28} />
       </div>
       <span className="folder-label">
-        <span className="folder-name link">New folder</span>
-        <span className="folder-meta">Your own grouping</span>
+        <span className="folder-name link">Nieuwe map</span>
+        <span className="folder-meta">Je eigen indeling</span>
       </span>
     </button>
   )

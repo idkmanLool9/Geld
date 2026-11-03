@@ -7,7 +7,7 @@ export default function NoteArt({ item, side = 'front', size = 'card' }) {
   if (photo) {
     return (
       <div className={`art art-${size} art-photo ${item.type === 'coin' ? 'art-photo-coin' : ''}`}>
-        <img src={photo} alt={`${item.denom || ''} ${item.unit || ''}, ${side}`.trim()} />
+        <img src={photo} alt={`${item.denom || ''} ${item.unit || ''}, ${side === 'front' ? 'voorkant' : 'achterkant'}`.trim()} />
       </div>
     )
   }
@@ -16,7 +16,7 @@ export default function NoteArt({ item, side = 'front', size = 'card' }) {
     return (
       <div className={`art art-${size} art-coin-bg`}>
         <div className="coin" style={{ background: item.color }}>
-          {side === 'front' ? item.denom || '?' : <span className="coin-back">{item.back || 'No photo of the reverse yet'}</span>}
+          {side === 'front' ? item.denom || '?' : <span className="coin-back">{item.back || 'Nog geen foto van de keerzijde'}</span>}
         </div>
       </div>
     )
@@ -28,7 +28,7 @@ export default function NoteArt({ item, side = 'front', size = 'card' }) {
     return (
       <div className={`art art-${size} note note-back`} style={{ backgroundColor: item.color }}>
         <div className="note-frame" />
-        <div className="note-motif">{item.back || 'No photo of the back yet'}</div>
+        <div className="note-motif">{item.back || 'Nog geen foto van de achterkant'}</div>
         <div className="note-denom note-denom-left">{item.denom || '?'}</div>
       </div>
     )

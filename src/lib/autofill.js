@@ -1,6 +1,6 @@
 // Free, on-device auto-fill: reads the text on a photo (Tesseract OCR, runs in the browser,
 // files served from this site) and the photo's main colour. No account, no API, no cost.
-import { COUNTRIES } from '../data/countries.js'
+import { ALL_NAMES } from '../data/countries.js'
 import { unitsFor } from '../data/currencies.js'
 
 // ----- OCR -----
@@ -143,7 +143,7 @@ const ISSUERS = [
   ['CENTRALE BANK VAN ARUBA', 'AW'],
 ].map(([re, cc]) => [new RegExp('\\b(' + re.replace(/'/g, "'?") + ')\\b'), cc])
 
-const NAME_TO_CC = COUNTRIES.filter((c) => c.name.length >= 4).map((c) => [new RegExp('\\b' + norm(c.name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b'), c.cc])
+const NAME_TO_CC = ALL_NAMES.filter(([name]) => name.length >= 4).map(([name, cc]) => [new RegExp('\\b' + norm(name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b'), cc])
 
 const YEAR_NOW = new Date().getFullYear()
 const isDenom = (n) => /^(1|2|25|3|5)0*$/.test(String(n)) && n > 0 && n <= 1e9

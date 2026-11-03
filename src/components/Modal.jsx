@@ -22,7 +22,7 @@ export default function Modal({ title, onClose, children, footer, wide = false }
       <div ref={ref} className={`modal ${wide ? 'modal-wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div className="modal-head">
           <h2 id="modal-title">{title}</h2>
-          <button type="button" className="round-btn modal-close" aria-label="Close" onClick={onClose}>
+          <button type="button" className="round-btn modal-close" aria-label="Sluiten" onClick={onClose}>
             <Icon name="close" size={14} stroke={2.4} />
           </button>
         </div>

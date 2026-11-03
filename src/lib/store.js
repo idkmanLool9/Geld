@@ -82,7 +82,7 @@ export function readPhoto(file, max = 1400) {
     }
     img.onerror = () => {
       URL.revokeObjectURL(url)
-      reject(new Error('This image could not be read.'))
+      reject(new Error('Deze afbeelding kon niet gelezen worden.'))
     }
     img.src = url
   })
@@ -172,6 +172,6 @@ export async function exportCollection(items, folders) {
 
 export async function readBackup(file) {
   const data = JSON.parse(await file.text())
-  if (!data || !Array.isArray(data.items)) throw new Error('This is not a collection backup file.')
+  if (!data || !Array.isArray(data.items)) throw new Error('Dit is geen back-upbestand van de collectie.')
   return { items: data.items, folders: Array.isArray(data.folders) ? data.folders : [] }
 }

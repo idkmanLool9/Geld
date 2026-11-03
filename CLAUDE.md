@@ -4,7 +4,9 @@ A personal web app for keeping a collection of banknotes and coins:
 folders by type and by country, a timeline by decade, and a detail panel per note.
 It started as a design on a Claude canvas and was ported here to keep building it.
 
-Levi usually writes in Dutch; answer in the language he uses. UI copy is English for now.
+Levi usually writes in Dutch; answer in the language he uses. The UI is Dutch (texts, country/region
+names, statuses, € 1.234,50 numbers and dates via `lib/format.js`). Internal keys stay English
+(region keys, status keys, stored English country names are still recognised as aliases).
 
 ## Commands
 
@@ -128,4 +130,4 @@ scripts/ocr-assets.mjs    copies the OCR engine + model into public/ocr (runs be
 
 - Live sync between devices (e.g. Supabase) — needs a free project slot.
 - CSV export.
-- Optional: Dutch UI, dark mode.
+- Optional: dark mode, English UI toggle.

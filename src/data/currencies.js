@@ -60,19 +60,19 @@ export const currentUnit = (cc) => CURRENT_BY_CC[cc] || null
 // Official euro conversion rates and where the national central bank still exchanges banknotes.
 // `until`: last day (ISO) — null means no end date. Older series can have expired earlier.
 const EURO_LEGACY = {
-  BE: { unit: 'Frank', rate: 40.3399, bank: 'Nationale Bank van België, Brussels (also by registered post)', until: null },
-  DE: { unit: 'Mark', rate: 1.95583, bank: 'Deutsche Bundesbank, any branch (also by post)', until: null },
-  AT: { unit: 'Schilling', rate: 13.7603, bank: 'Oesterreichische Nationalbank, Vienna (also by post)', until: null },
-  IE: { unit: 'Pound', rate: 0.787564, bank: 'Central Bank of Ireland, Dublin (also by post)', until: null },
+  BE: { unit: 'Frank', rate: 40.3399, bank: 'Nationale Bank van België, Brussel (ook per aangetekende post)', until: null },
+  DE: { unit: 'Mark', rate: 1.95583, bank: 'Deutsche Bundesbank, elk filiaal (ook per post)', until: null },
+  AT: { unit: 'Schilling', rate: 13.7603, bank: 'Oesterreichische Nationalbank, Wenen (ook per post)', until: null },
+  IE: { unit: 'Pound', rate: 0.787564, bank: 'Central Bank of Ireland, Dublin (ook per post)', until: null },
   LU: { unit: 'Franc', rate: 40.3399, bank: 'Banque centrale du Luxembourg', until: null },
-  NL: { unit: 'Gulden', rate: 2.20371, bank: 'De Nederlandsche Bank, Amsterdam (by appointment or by post)', until: '2031-12-31' },
+  NL: { unit: 'Gulden', rate: 2.20371, bank: 'De Nederlandsche Bank, Amsterdam (op afspraak of per post)', until: '2031-12-31' },
   SI: { unit: 'Tolar', rate: 239.64, bank: 'Banka Slovenije, Ljubljana', until: null },
   SK: { unit: 'Koruna', rate: 30.126, bank: 'Národná banka Slovenska', until: null },
   EE: { unit: 'Kroon', rate: 15.6466, bank: 'Eesti Pank, Tallinn', until: null },
   LV: { unit: 'Lats', rate: 0.702804, bank: 'Latvijas Banka, Riga', until: null },
   LT: { unit: 'Litas', rate: 3.4528, bank: 'Lietuvos bankas, Vilnius', until: null },
   HR: { unit: 'Kuna', rate: 7.5345, bank: 'Hrvatska narodna banka, Zagreb', until: null },
-  BG: { unit: 'Lev', rate: 1.95583, bank: 'Bulgarian National Bank, Sofia', until: null },
+  BG: { unit: 'Lev', rate: 1.95583, bank: 'Bulgaarse Nationale Bank, Sofia', until: null },
   FR: { unit: 'Franc', rate: 6.55957, until: '2012-02-17' },
   IT: { unit: 'Lira', rate: 1936.27, until: '2011-12-06' },
   ES: { unit: 'Peseta', rate: 166.386, until: '2021-06-30' },
@@ -113,13 +113,13 @@ export function currencyCode(cc, unit) {
 
 /** Advice for money that is still legal tender: how to turn it into euro. */
 export function legalTenderAdvice(code, country, type = 'note') {
-  if (code === 'EUR') return 'Euro: spend it, or pay it into any bank account in the euro area.'
+  if (code === 'EUR') return 'Euro: geef het uit, of stort het op een bankrekening in het eurogebied.'
   const where = country ? ` in ${country}` : ''
-  if (type === 'coin') return `Still valid money${where}. Exchange offices rarely take coins: spend them${where}.`
+  if (type === 'coin') return `Nog wettig betaalmiddel${where}. Wisselkantoren nemen zelden munten aan: geef ze uit${where}.`
   return (
-    `Still valid money${where}. Change it at a currency exchange office (for example GWK Travelex in the Netherlands; ` +
-    `many banks in Belgium and the Netherlands no longer change cash), or spend it${where}. An exchange office pays a little ` +
-    `less than the market rate. Central banks do not buy valid foreign money by post.`
+    `Nog wettig betaalmiddel${where}. Wissel het bij een wisselkantoor (bijvoorbeeld GWK Travelex in Nederland; ` +
+    `veel banken in België en Nederland wisselen geen contant geld meer), of geef het uit${where}. Een wisselkantoor geeft ` +
+    `iets minder dan de marktkoers. Centrale banken kopen geldig buitenlands geld niet per post op.`
   )
 }
 
@@ -145,7 +145,7 @@ export const parseDenom = (d) => {
   if (!m) return null
   return +m[1] * (m[2] === 'K' ? 1e3 : m[2] === 'M' ? 1e6 : 1)
 }
-const fmtDate = (iso) => new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+const fmtDate = (iso) => new Date(iso + 'T12:00:00Z').toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
 
 /**
  * Exchange facts for an old euro-area banknote: status, exchange value in EUR and where.
@@ -156,10 +156,10 @@ export function exchangeInfo(cc, unit, denom, type = 'note') {
   if (!e || type !== 'note' || String(unit || '').trim().toLowerCase() !== e.unit.toLowerCase()) return null
   const open = !e.until || new Date(e.until + 'T23:59:59Z') > new Date()
   const n = parseDenom(denom)
-  if (!open) return { status: 'demo', face: 0, where: '', note: `Exchange at the central bank ended on ${fmtDate(e.until)}.` }
+  if (!open) return { status: 'demo', face: 0, where: '', note: `Inwisselen bij de centrale bank kon tot ${fmtDate(e.until)}.` }
   return {
     status: 'exch',
     face: n ? Math.round((n / e.rate) * 100) / 100 : 0,
-    where: `${e.bank}${e.until ? ` — until ${fmtDate(e.until)}` : ' — no end date'}. Check that this series is still accepted.`,
+    where: `${e.bank}${e.until ? ` — tot ${fmtDate(e.until)}` : ' — geen einddatum'}. Controleer of deze serie nog aanvaard wordt.`,
   }
 }

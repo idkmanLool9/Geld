@@ -5,7 +5,8 @@ import NoteArt from './NoteArt.jsx'
 import Segmented from './Segmented.jsx'
 import { StatusPill } from './ItemsView.jsx'
 import { valueLabel, countryKey } from '../lib/collection.js'
-import { eur } from '../lib/format.js'
+import { eur, fmtDate } from '../lib/format.js'
+import { regionLabel } from '../data/meta.js'
 import { currencyCode, parseDenom } from '../data/currencies.js'
 import { getRates, toEuro } from '../lib/rates.js'
 
@@ -38,21 +39,21 @@ export default function DetailPanel({ item, folders, onToggleFav, onEdit, onDele
   }, [item.id])
 
   const facts = [
-    item.series && ['Series', item.series],
-    item.year && ['Issued', item.year],
-    ['Quantity', String(item.qty)],
-    item.region && item.region !== 'Other' && ['Region', item.region],
-    item.front && ['Front', item.front],
-    item.back && ['Back', item.back],
+    item.series && ['Serie', item.series],
+    item.year && ['Uitgegeven', item.year],
+    ['Aantal', String(item.qty)],
+    item.region && item.region !== 'Other' && ['Regio', regionLabel(item.region)],
+    item.front && ['Voorkant', item.front],
+    item.back && ['Achterkant', item.back],
   ].filter(Boolean)
 
   const chips = folders.filter((f) => (item.folders || []).includes(f.id)).map((f) => ({ label: f.name, view: 'folder:' + f.id }))
   if (item.country) chips.push({ label: item.country, view: 'country:' + countryKey(item) })
 
-  const name = [item.denom, item.unit].filter(Boolean).join(' ') || 'Untitled'
+  const name = [item.denom, item.unit].filter(Boolean).join(' ') || 'Naamloos'
 
   return (
-    <aside ref={ref} className="card detail" aria-label="Item details">
+    <aside ref={ref} className="card detail" aria-label="Details van het stuk">
       <div className="detail-bar">
         <StatusPill status={item.status} />
         {item.tag && <span className="tag-pill">{item.tag}</span>}
@@ -60,25 +61,25 @@ export default function DetailPanel({ item, folders, onToggleFav, onEdit, onDele
         <button
           type="button"
           className="round-btn"
-          aria-label={item.fav ? 'Remove from favorites' : 'Add to favorites'}
+          aria-label={item.fav ? 'Uit favorieten halen' : 'Aan favorieten toevoegen'}
           aria-pressed={!!item.fav}
           onClick={onToggleFav}
           style={{ color: item.fav ? '#E8890C' : undefined }}
         >
           <Icon name="star" size={16} stroke={2} fill={item.fav ? 'currentColor' : 'none'} />
         </button>
-        <button type="button" className="round-btn" aria-label="Previous item" onClick={onPrev || undefined} disabled={!onPrev}>
+        <button type="button" className="round-btn" aria-label="Vorig stuk" onClick={onPrev || undefined} disabled={!onPrev}>
           <Icon name="back" size={14} stroke={2.4} />
         </button>
-        <button type="button" className="round-btn" aria-label="Next item" onClick={onNext || undefined} disabled={!onNext}>
+        <button type="button" className="round-btn" aria-label="Volgend stuk" onClick={onNext || undefined} disabled={!onNext}>
           <Icon name="next" size={14} stroke={2.4} />
         </button>
-        <button type="button" className="round-btn" aria-label="Close details" onClick={onClose}>
+        <button type="button" className="round-btn" aria-label="Details sluiten" onClick={onClose}>
           <Icon name="close" size={14} stroke={2.4} />
         </button>
       </div>
 
-      <button type="button" className="flip" aria-label="Flip to the other side" onClick={() => setSide(side === 'front' ? 'back' : 'front')}>
+      <button type="button" className="flip" aria-label="Omdraaien" onClick={() => setSide(side === 'front' ? 'back' : 'front')}>
         <div className="flip-inner" style={{ transform: `rotateY(${side === 'back' ? 180 : 0}deg)` }}>
           <div className="flip-face">
             <NoteArt item={item} side="front" size="large" />
@@ -90,12 +91,12 @@ export default function DetailPanel({ item, folders, onToggleFav, onEdit, onDele
       </button>
       <div className="center">
         <Segmented
-          label="Side"
+          label="Kant"
           value={side}
           onChange={setSide}
           options={[
-            { value: 'front', label: 'Front' },
-            { value: 'back', label: 'Back' },
+            { value: 'front', label: 'Voorkant' },
+            { value: 'back', label: 'Achterkant' },
           ]}
         />
       </div>
@@ -113,13 +114,13 @@ export default function DetailPanel({ item, folders, onToggleFav, onEdit, onDele
       {showValues && (
         <div className="value-row">
           <div className="value-box">
-            <span className="muted xsmall">Estimated value</span>
+            <span className="muted xsmall">Geschatte waarde</span>
             <span className="value-num">{valueLabel(item)}</span>
           </div>
           <div className="value-box">
-            <span className="muted xsmall">{legal ? 'Worth in euro today' : 'Exchange value'}</span>
-            <span className="value-num">{(item.status === 'exch' || legal) && cash ? eur(cash) : legal ? '—' : 'None'}</span>
-            {legal && live && <span className="muted xsmall">Rate of {live.date}</span>}
+            <span className="muted xsmall">{legal ? 'Vandaag waard in euro' : 'Inwisselwaarde'}</span>
+            <span className="value-num">{(item.status === 'exch' || legal) && cash ? eur(cash) : legal ? '—' : 'Geen'}</span>
+            {legal && live && <span className="muted xsmall">Koers van {fmtDate(live.date)}</span>}
           </div>
         </div>
       )}
@@ -128,7 +129,7 @@ export default function DetailPanel({ item, folders, onToggleFav, onEdit, onDele
         <div className="exchange">
           <Icon name="swap" size={20} stroke={2} />
           <div>
-            <span className="exchange-title">{legal ? 'How to cash it' : 'Can still be exchanged'}</span>
+            <span className="exchange-title">{legal ? 'Zo maak je er geld van' : 'Nog in te wisselen'}</span>
             <span>{item.where}</span>
           </div>
         </div>
@@ -145,7 +146,7 @@ export default function DetailPanel({ item, folders, onToggleFav, onEdit, onDele
 
       {item.note && (
         <div className="notes">
-          <span className="notes-label">Notes</span>
+          <span className="notes-label">Notities</span>
           <p>{item.note}</p>
         </div>
       )}
@@ -164,11 +165,11 @@ export default function DetailPanel({ item, folders, onToggleFav, onEdit, onDele
       <div className="detail-actions">
         <button type="button" className="secondary-btn" onClick={onEdit}>
           <Icon name="edit" size={16} stroke={2} />
-          Edit
+          Bewerken
         </button>
         <button type="button" className="secondary-btn danger" onClick={onDelete}>
           <Icon name="trash" size={16} stroke={2} />
-          Delete
+          Verwijderen
         </button>
       </div>
     </aside>

@@ -48,12 +48,12 @@ async function gh(token, method, path, body) {
     }
     const err = new Error(
       res.status === 401
-        ? 'GitHub did not accept the key. Check that it is copied completely and has not expired.'
+        ? 'GitHub aanvaardt de sleutel niet. Controleer of hij volledig gekopieerd is en niet verlopen is.'
         : res.status === 403 || res.status === 404
-          ? 'This key has no write access to the Geld repository. Give it “Contents: Read and write” for that repository.'
+          ? 'Deze sleutel mag niet schrijven in de Geld-repository. Geef hem “Contents: Read and write” voor die repository.'
           : res.status === 422 && /fast.forward/i.test(detail)
-            ? 'The collection on GitHub changed while publishing. Please tap Publish again.'
-            : `GitHub answered with an error (${res.status}${detail ? `: ${detail}` : ''}). Please try again.`,
+            ? 'De collectie op GitHub veranderde tijdens het publiceren. Tik nog eens op Publiceren.'
+            : `GitHub gaf een fout (${res.status}${detail ? `: ${detail}` : ''}). Probeer het opnieuw.`,
     )
     err.status = res.status
     err.detail = detail
@@ -105,7 +105,7 @@ export async function publish(token, items, folders, onProgress = () => {}) {
     } catch (err) {
       // The branch moved in between (another publish): wait a moment and start again from the new state.
       if (err.status === 422 && attempt < 3) {
-        onProgress('Catching up with GitHub…')
+        onProgress('Even bijwerken met GitHub…')
         await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)))
         continue
       }
@@ -115,7 +115,7 @@ export async function publish(token, items, folders, onProgress = () => {}) {
 }
 
 async function publishOnce(token, items, folders, onProgress) {
-  onProgress('Connecting to GitHub…')
+  onProgress('Verbinden met GitHub…')
   const ref = await gh(token, 'GET', `/git/ref/heads/${REPO.branch}`)
   const head = await gh(token, 'GET', `/git/commits/${ref.object.sha}`)
   const tree = await gh(token, 'GET', `/git/trees/${head.tree.sha}?recursive=1`)
@@ -151,7 +151,7 @@ async function publishOnce(token, items, folders, onProgress) {
         uploaded++
       }
       done++
-      onProgress(`Photos ${done} of ${jobs.length}…`)
+      onProgress(`Foto's ${done} van ${jobs.length}…`)
     }
   }
   await Promise.all([worker(), worker(), worker()])
@@ -159,7 +159,7 @@ async function publishOnce(token, items, folders, onProgress) {
   // Photos of pieces that were deleted.
   for (const path of existing.keys()) if (path.startsWith(photoDir) && !used.has(path)) entries.push({ path, mode: '100644', type: 'blob', sha: null })
 
-  onProgress('Saving the collection…')
+  onProgress('Collectie opslaan…')
   const data = { app: 'collectie', version: 1, exported: new Date().toISOString(), folders, items: outItems }
   const json = await gh(token, 'POST', '/git/blobs', { content: JSON.stringify(data), encoding: 'utf-8' })
   entries.push({ path: `${REPO.dir}/collection.json`, mode: '100644', type: 'blob', sha: json.sha })

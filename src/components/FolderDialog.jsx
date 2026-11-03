@@ -10,23 +10,23 @@ export default function FolderDialog({ folder, onSave, onClose }) {
   }
   return (
     <Modal
-      title={folder ? 'Rename folder' : 'New folder'}
+      title={folder ? 'Map hernoemen' : 'Nieuwe map'}
       onClose={onClose}
       footer={
         <>
           <button type="button" className="secondary-btn" onClick={onClose}>
-            Cancel
+            Annuleren
           </button>
           <button type="submit" form="folder-form" className="primary-btn" disabled={!clean}>
-            {folder ? 'Save' : 'Create folder'}
+            {folder ? 'Opslaan' : 'Map maken'}
           </button>
         </>
       }
     >
       <form id="folder-form" onSubmit={submit} className="form">
         <label className="field">
-          <span>Name</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. To sell, Gifts, Euro" maxLength={60} />
+          <span>Naam</span>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="bv. Te koop, Cadeaus, Euro" maxLength={60} />
         </label>
       </form>
     </Modal>

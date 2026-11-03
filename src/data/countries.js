@@ -19,69 +19,88 @@ export const REGIONS = {
   Other: 'AQ BV HM',
 }
 
-// Issuers that are not (or no longer) an ISO country.
+// Issuers that are not (or no longer) an ISO country (Dutch name + English name).
 const EXTRA = [
-  { cc: 'EU', name: 'Eurozone', region: 'Western Europe', flag: 'eu' },
-  { cc: 'GB-SCT', name: 'Scotland', region: 'Western Europe', flag: 'gb-sct' },
-  { cc: 'GB-NIR', name: 'Northern Ireland', region: 'Western Europe', flag: 'gb-nir' },
-  { cc: 'XK', name: 'Kosovo', region: 'Eastern Europe', flag: 'xk' },
-  { cc: 'DE', name: 'West Germany', region: 'Western Europe', flag: 'de' },
-  { cc: 'DR', name: 'German Empire', region: 'Western Europe', flag: null },
-  { cc: 'DD', name: 'East Germany', region: 'Eastern Europe', flag: null },
-  { cc: 'SU', name: 'Soviet Union', region: 'Eastern Europe', flag: null },
-  { cc: 'YU', name: 'Yugoslavia', region: 'Eastern Europe', flag: 'yu' },
-  { cc: 'CS', name: 'Czechoslovakia', region: 'Eastern Europe', flag: null },
-  { cc: 'SCG', name: 'Serbia and Montenegro', region: 'Eastern Europe', flag: null },
-  { cc: 'OT', name: 'Ottoman Empire', region: 'Middle East & Turkey', flag: null },
-  { cc: 'ZR', name: 'Zaire', region: 'Africa', flag: null },
-  { cc: 'RH', name: 'Rhodesia', region: 'Africa', flag: null },
-  { cc: 'BWA', name: 'West African States', region: 'Africa', flag: null },
-  { cc: 'BEAC', name: 'Central African States', region: 'Africa', flag: null },
-  { cc: 'CEY', name: 'Ceylon', region: 'Central & South Asia', flag: null },
-  { cc: 'BU', name: 'Burma', region: 'East & Southeast Asia', flag: null },
-  { cc: 'AN', name: 'Netherlands Antilles', region: 'Central America & Caribbean', flag: null },
-  { cc: 'ECS', name: 'East Caribbean States', region: 'Central America & Caribbean', flag: null },
+  { cc: 'EU', name: 'Eurozone', en: 'Eurozone', region: 'Western Europe', flag: 'eu' },
+  { cc: 'GB-SCT', name: 'Schotland', en: 'Scotland', region: 'Western Europe', flag: 'gb-sct' },
+  { cc: 'GB-NIR', name: 'Noord-Ierland', en: 'Northern Ireland', region: 'Western Europe', flag: 'gb-nir' },
+  { cc: 'XK', name: 'Kosovo', en: 'Kosovo', region: 'Eastern Europe', flag: 'xk' },
+  { cc: 'DE', name: 'West-Duitsland', en: 'West Germany', region: 'Western Europe', flag: 'de' },
+  { cc: 'DR', name: 'Duitse Rijk', en: 'German Empire', region: 'Western Europe', flag: null },
+  { cc: 'DD', name: 'Oost-Duitsland', en: 'East Germany', region: 'Eastern Europe', flag: null },
+  { cc: 'SU', name: 'Sovjet-Unie', en: 'Soviet Union', region: 'Eastern Europe', flag: null },
+  { cc: 'YU', name: 'Joegoslavië', en: 'Yugoslavia', region: 'Eastern Europe', flag: 'yu' },
+  { cc: 'CS', name: 'Tsjecho-Slowakije', en: 'Czechoslovakia', region: 'Eastern Europe', flag: null },
+  { cc: 'SCG', name: 'Servië en Montenegro', en: 'Serbia and Montenegro', region: 'Eastern Europe', flag: null },
+  { cc: 'OT', name: 'Ottomaanse Rijk', en: 'Ottoman Empire', region: 'Middle East & Turkey', flag: null },
+  { cc: 'ZR', name: 'Zaïre', en: 'Zaire', region: 'Africa', flag: null },
+  { cc: 'RH', name: 'Rhodesië', en: 'Rhodesia', region: 'Africa', flag: null },
+  { cc: 'BWA', name: 'West-Afrikaanse Staten', en: 'West African States', region: 'Africa', flag: null },
+  { cc: 'BEAC', name: 'Centraal-Afrikaanse Staten', en: 'Central African States', region: 'Africa', flag: null },
+  { cc: 'CEY', name: 'Ceylon', en: 'Ceylon', region: 'Central & South Asia', flag: null },
+  { cc: 'BU', name: 'Birma', en: 'Burma', region: 'East & Southeast Asia', flag: null },
+  { cc: 'AN', name: 'Nederlandse Antillen', en: 'Netherlands Antilles', region: 'Central America & Caribbean', flag: null },
+  { cc: 'ECS', name: 'Oost-Caribische Staten', en: 'East Caribbean States', region: 'Central America & Caribbean', flag: null },
 ]
 
-// Other names people type for the same country.
+// Other names people type for the same country (Dutch and English).
 const ALIASES = {
   turkey: 'TR', 'türkiye': 'TR', holland: 'NL', 'the netherlands': 'NL', usa: 'US', 'united states of america': 'US', america: 'US',
   uk: 'GB', 'great britain': 'GB', england: 'GB', britain: 'GB', 'czech republic': 'CZ', 'ivory coast': 'CI', swaziland: 'SZ',
   'east timor': 'TL', 'cape verde': 'CV', macedonia: 'MK', 'north korea': 'KP', 'south korea': 'KR', korea: 'KR', russia: 'RU',
-  vatican: 'VA', 'vatican city': 'VA', palestine: 'PS', 'hong kong': 'HK', macau: 'MO', 'myanmar (burma)': 'MM', 'congo': 'CG',
+  vatican: 'VA', 'vatican city': 'VA', palestine: 'PS', 'hong kong': 'HK', macau: 'MO', 'myanmar (burma)': 'MM', congo: 'CG',
   'dr congo': 'CD', 'democratic republic of the congo': 'CD', 'faroe islands': 'FO', curacao: 'CW', 'curaçao': 'CW',
+  engeland: 'GB', 'groot-brittannië': 'GB', 'groot-brittannie': 'GB', vk: 'GB', amerika: 'US', vs: 'US',
+  'verenigde staten van amerika': 'US', tsjechie: 'CZ', 'tsjechië': 'CZ', 'zuid-korea': 'KR', 'noord-korea': 'KP',
+  vaticaanstad: 'VA', 'ivoorkust': 'CI', 'kaapverdië': 'CV', macedonie: 'MK', 'macedonië': 'MK', belgie: 'BE',
 }
 
-let names = null
-try {
-  names = new Intl.DisplayNames(['en'], { type: 'region' })
-} catch {
-  /* very old browser: codes are shown instead */
-}
-const nameOf = (cc) => {
+const displayNames = (lang) => {
   try {
-    return names?.of(cc) || cc
+    return new Intl.DisplayNames([lang], { type: 'region' })
+  } catch {
+    return null /* very old browser: codes are shown instead */
+  }
+}
+const NL = displayNames('nl')
+const EN = displayNames('en')
+const nameIn = (dn, cc) => {
+  try {
+    return dn?.of(cc) || cc
   } catch {
     return cc
   }
 }
 
 const ISO = Object.entries(REGIONS).flatMap(([region, codes]) =>
-  codes.split(' ').map((cc) => ({ cc, region, name: nameOf(cc), flag: cc.toLowerCase() })),
+  codes.split(' ').map((cc) => ({ cc, region, name: nameIn(NL, cc), en: nameIn(EN, cc), flag: cc.toLowerCase() })),
 )
 
-export const COUNTRIES = [...ISO, ...EXTRA].sort((a, b) => a.name.localeCompare(b.name))
+export const COUNTRIES = [...ISO, ...EXTRA].sort((a, b) => a.name.localeCompare(b.name, 'nl'))
 
-const byName = new Map(COUNTRIES.map((c) => [c.name.toLowerCase(), c]))
+const byName = new Map()
+for (const c of COUNTRIES) byName.set(c.name.toLowerCase(), c)
+for (const c of COUNTRIES) if (!byName.has(c.en.toLowerCase())) byName.set(c.en.toLowerCase(), c)
 const byCode = new Map(ISO.map((c) => [c.cc, c]))
 for (const [alias, cc] of Object.entries(ALIASES)) if (!byName.has(alias)) byName.set(alias, byCode.get(cc))
+
+/** Every name a country is known by (Dutch, English, aliases) with its code — for reading photos. */
+export const ALL_NAMES = [...byName.entries()].map(([name, c]) => [name, c.cc])
 
 /** Flag-icons code for a stored item code, or null. */
 const FLAGS = new Map(COUNTRIES.filter((c) => c.flag).map((c) => [c.cc, c.flag]))
 export const flagFor = (cc) => FLAGS.get(cc) || null
 
+const lookup = (name) => byName.get(String(name || '').trim().toLowerCase())
+
 /** Look up a typed country name. Unknown names keep their text, with no flag and region "Other". */
 export function countryInfo(name) {
-  const c = byName.get(String(name || '').trim().toLowerCase())
+  const c = lookup(name)
   return c ? { cc: c.cc, region: c.region } : { cc: '?', region: 'Other' }
+}
+
+/** The Dutch name for a country typed in any known form ("France" → "Frankrijk"); unknown text stays as is. */
+export function canonicalCountry(name) {
+  const c = lookup(name)
+  return c ? c.name : name
 }

@@ -27,8 +27,24 @@ export const REGION_COLORS = {
 }
 
 export const STATUS = {
-  legal: { label: 'Legal tender', bg: '#E3F4E8', fg: '#1B6E36' },
-  exch: { label: 'Exchangeable', bg: '#E5F0FD', fg: '#0055B3' },
-  demo: { label: 'Demonetised', bg: '#EEEEF0', fg: '#55555C' },
-  check: { label: 'To identify', bg: '#FDF0E1', fg: '#8F4D00' },
+  legal: { label: 'Wettig betaalmiddel', bg: '#E3F4E8', fg: '#1B6E36' },
+  exch: { label: 'Inwisselbaar', bg: '#E5F0FD', fg: '#0055B3' },
+  demo: { label: 'Buiten omloop', bg: '#EEEEF0', fg: '#55555C' },
+  check: { label: 'Te identificeren', bg: '#FDF0E1', fg: '#8F4D00' },
 }
+
+// Region names shown in the app (the keys above stay English; they are stored on items).
+export const REGION_LABELS = {
+  'Western Europe': 'West-Europa',
+  'Eastern Europe': 'Oost-Europa',
+  'Middle East & Turkey': 'Midden-Oosten & Turkije',
+  Africa: 'Afrika',
+  'Central & South Asia': 'Centraal- & Zuid-Azië',
+  'East & Southeast Asia': 'Oost- & Zuidoost-Azië',
+  'North America': 'Noord-Amerika',
+  'Central America & Caribbean': 'Midden-Amerika & Caraïben',
+  'South America': 'Zuid-Amerika',
+  Oceania: 'Oceanië',
+  Other: 'Overig',
+}
+export const regionLabel = (r) => REGION_LABELS[r] || r

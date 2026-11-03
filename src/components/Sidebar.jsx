@@ -16,34 +16,34 @@ export default function Sidebar({ view, go, counts, folders, folderCounts, count
   const [more, setMore] = useState(false)
   const shown = more ? countries : countries.slice(0, 8)
   const lib = [
-    { key: 'home', icon: 'folder', label: 'Overview' },
-    { key: 'all', icon: 'grid', label: 'All items', count: counts.all },
-    { key: 'notes', icon: 'note', label: 'Banknotes', count: counts.notes },
-    { key: 'coins', icon: 'coin', label: 'Coins', count: counts.coins },
-    { key: 'favorites', icon: 'star', label: 'Favorites', count: counts.favorites },
+    { key: 'home', icon: 'folder', label: 'Overzicht' },
+    { key: 'all', icon: 'grid', label: 'Alle stukken', count: counts.all },
+    { key: 'notes', icon: 'note', label: 'Bankbiljetten', count: counts.notes },
+    { key: 'coins', icon: 'coin', label: 'Munten', count: counts.coins },
+    { key: 'favorites', icon: 'star', label: 'Favorieten', count: counts.favorites },
   ]
 
   return (
-    <nav className="sidebar" aria-label="Collection">
+    <nav className="sidebar" aria-label="Collectie">
       <div className="brand">
         <div className="brand-mark">
           <Icon name="note" size={20} />
         </div>
         <div className="brand-text">
-          <span className="brand-name">Collection</span>
-          <span className="brand-sub">Banknotes &amp; coins</span>
+          <span className="brand-name">Collectie</span>
+          <span className="brand-sub">Bankbiljetten &amp; munten</span>
         </div>
       </div>
 
       <div className="nav-group">
-        <span className="nav-heading">Library</span>
+        <span className="nav-heading">Bibliotheek</span>
         {lib.map((n) => (
           <NavItem key={n.key} {...n} active={view === n.key} onClick={() => go(n.key)} />
         ))}
       </div>
 
       <div className="nav-group">
-        <span className="nav-heading">Folders</span>
+        <span className="nav-heading">Mappen</span>
         {folders.map((f) => (
           <NavItem
             key={f.id}
@@ -56,13 +56,13 @@ export default function Sidebar({ view, go, counts, folders, folderCounts, count
         ))}
         <button type="button" className="nav-more nav-new" onClick={onNewFolder}>
           <Icon name="plus" size={15} stroke={2.2} />
-          New folder
+          Nieuwe map
         </button>
       </div>
 
       {countries.length > 0 && (
         <div className="nav-group">
-          <span className="nav-heading">Countries</span>
+          <span className="nav-heading">Landen</span>
           {shown.map((c) => (
             <NavItem key={c.key} label={c.name} count={c.pieces} active={view === 'country:' + c.key} onClick={() => go('country:' + c.key)}>
               <Flag cc={c.cc} width={22} height={15} />
@@ -70,7 +70,7 @@ export default function Sidebar({ view, go, counts, folders, folderCounts, count
           ))}
           {countries.length > 8 && (
             <button type="button" className="nav-more" onClick={() => setMore(!more)}>
-              {more ? 'Show fewer' : `Show all ${countries.length}`}
+              {more ? 'Minder tonen' : `Alle ${countries.length} tonen`}
             </button>
           )}
         </div>
