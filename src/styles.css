@@ -291,9 +291,10 @@ h1, h2, h3, p { margin: 0; }
 /* ---------- Note / coin art ---------- */
 .art { position: relative; width: 100%; aspect-ratio: 2.1 / 1; border-radius: 8px; overflow: hidden; }
 .art-large { border-radius: 10px; }
-/* Show the whole photo (coins are round and square-ish, the frame is wide): never crop. */
-.art-photo { background: var(--fill); }
-.art-photo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.art-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Coins are round and their photos square-ish: show the whole coin instead of cropping it. */
+.art-photo-coin { background: var(--fill); }
+.art-photo-coin img { object-fit: contain; }
 .note {
   background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 5px);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); color: #fff;
@@ -442,7 +443,8 @@ body.no-scroll { overflow: hidden; }
 .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .photo-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .photo-preview, .photo-empty { width: 100%; aspect-ratio: 2.1 / 1; border-radius: 10px; overflow: hidden; background: var(--fill); }
-.photo-preview img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.photo-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-preview-coin img { object-fit: contain; }
 .photo-empty {
   display: flex; flex-direction: column; gap: 6px; align-items: center; justify-content: center; color: var(--link);
   font-size: 14px; font-weight: 600; border: 1.5px dashed #c7c7cc; cursor: pointer;

@@ -41,7 +41,7 @@ const num = (v) => {
 const same = (a, b) => txt(a).toLowerCase() === txt(b).toLowerCase()
 const isDefault = (k, v) => v === EMPTY[k] || v === '' || v == null
 
-function PhotoField({ side, value, onChange, setError }) {
+function PhotoField({ side, value, coin, onChange, setError }) {
   const input = useRef(null)
   const pick = async (e) => {
     const file = e.target.files?.[0]
@@ -57,7 +57,7 @@ function PhotoField({ side, value, onChange, setError }) {
     <div className="photo-field">
       <span className="field-label">{side === 'front' ? 'Front photo' : 'Back photo'}</span>
       {value ? (
-        <div className="photo-preview">
+        <div className={`photo-preview ${coin ? 'photo-preview-coin' : ''}`}>
           <img src={value} alt={`${side} preview`} />
         </div>
       ) : (
@@ -319,8 +319,8 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
         {!item && !f.photos.front && <p className="form-hint">Start with a photo: country, denomination, currency, year and colour are read from it and filled in for you.</p>}
 
         <div className="photo-grid">
-          <PhotoField side="front" value={f.photos.front} onChange={setPhoto('front')} setError={setError} />
-          <PhotoField side="back" value={f.photos.back} onChange={setPhoto('back')} setError={setError} />
+          <PhotoField side="front" value={f.photos.front} coin={f.type === 'coin'} onChange={setPhoto('front')} setError={setError} />
+          <PhotoField side="back" value={f.photos.back} coin={f.type === 'coin'} onChange={setPhoto('back')} setError={setError} />
         </div>
 
         {ocr && (

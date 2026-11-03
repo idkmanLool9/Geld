@@ -6,7 +6,7 @@ export default function NoteArt({ item, side = 'front', size = 'card' }) {
   const photo = item.photos?.[side]
   if (photo) {
     return (
-      <div className={`art art-${size} art-photo`}>
+      <div className={`art art-${size} art-photo ${item.type === 'coin' ? 'art-photo-coin' : ''}`}>
         <img src={photo} alt={`${item.denom || ''} ${item.unit || ''}, ${side}`.trim()} />
       </div>
     )
