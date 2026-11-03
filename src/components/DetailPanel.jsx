@@ -55,6 +55,7 @@ export default function DetailPanel({ item, folders, onToggleFav, onEdit, onDele
     <aside ref={ref} className="card detail" aria-label="Item details">
       <div className="detail-bar">
         <StatusPill status={item.status} />
+        {item.tag && <span className="tag-pill">{item.tag}</span>}
         <div className="grow" />
         <button
           type="button"

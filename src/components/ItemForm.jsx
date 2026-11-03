@@ -26,6 +26,7 @@ const EMPTY = {
   back: '',
   where: '',
   note: '',
+  tag: '',
   folders: [],
   photos: {},
 }
@@ -91,6 +92,7 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
   const [error, setError] = useState('')
   const [ocr, setOcr] = useState(null) // null | { state: 'loading'|'reading'|'done'|'error', progress, filled }
   const [copyDismissed, setCopyDismissed] = useState(false)
+  const [tagOn, setTagOn] = useState(!!item?.tag)
 
   // Auto-fill bookkeeping: fields the user typed in are never overwritten; auto-filled ones are
   // highlighted until edited. When editing an existing piece, everything already filled counts as typed.
@@ -285,6 +287,7 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
       back: txt(f.back),
       where: f.status === 'exch' || f.status === 'legal' ? txt(f.where) : '',
       note: txt(f.note),
+      tag: tagOn ? txt(f.tag) : '',
       qty: Math.max(1, Math.round(num(f.qty)) || 1),
       lo: Math.min(lo, hi),
       hi: Math.max(lo, hi),
@@ -460,6 +463,31 @@ export default function ItemForm({ item, items = [], folders, defaultFolder, onS
             <span>Back shows</span>
             <input className={cls('back')} value={f.back} onChange={set('back')} placeholder="Landscape, animal…" />
           </label>
+        </div>
+
+        <div className="field tag-field">
+          <label className="check tag-check">
+            <input
+              type="checkbox"
+              checked={tagOn}
+              onChange={(e) => {
+                setTagOn(e.target.checked)
+                if (!e.target.checked) userSet('tag', '')
+              }}
+            />
+            Add a tag
+          </label>
+          {tagOn && (
+            <input
+              value={f.tag}
+              onChange={set('tag')}
+              placeholder="e.g. Special serial number"
+              maxLength={28}
+              aria-label="Tag text"
+              autoFocus
+            />
+          )}
+          <span className="field-note">Shown as a small label on the top right of the piece, so it stands out.</span>
         </div>
 
         <label className="field">

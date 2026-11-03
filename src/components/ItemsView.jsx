@@ -52,8 +52,11 @@ function Summary({ list, showValues }) {
 
 function Card({ it, selected, fav, showValues, onSelect }) {
   return (
-    <button type="button" className={`item-card ${selected ? 'is-selected' : ''}`} onClick={onSelect}>
-      <NoteArt item={it} />
+    <button type="button" className={`item-card ${selected ? 'is-selected' : ''} ${it.tag ? 'is-tagged' : ''}`} onClick={onSelect}>
+      <span className="art-wrap">
+        <NoteArt item={it} />
+        {it.tag && <span className="item-tag">{it.tag}</span>}
+      </span>
       <span className="item-text">
         <span className="item-name">
           {[it.denom, it.unit].filter(Boolean).join(' ') || 'Untitled'}
@@ -97,6 +100,7 @@ function Table({ list, sel, showValues, onSelect }) {
                 <button type="button" className="row-button" onClick={() => onSelect(it.id)}>
                   <span className={it.type === 'coin' ? 'thumb thumb-coin' : 'thumb'} style={{ background: it.color }} />
                   <span className="strong">{[it.denom, it.unit].filter(Boolean).join(' ') || 'Untitled'}</span>
+                  {it.tag && <span className="tag-pill">{it.tag}</span>}
                 </button>
               </td>
               <td>

@@ -60,7 +60,7 @@ export function filterItems(items, { view, type, query, sort }) {
     if (view.startsWith('decade:') && !(it.dated && decadeOf(it) === +view.slice(7))) return false
     if (type !== 'all' && it.type !== type) return false
     if (q) {
-      const hay = [it.country, it.denom, it.unit, it.series, it.year, it.front, it.back, it.region, it.note].join(' ').toLowerCase()
+      const hay = [it.country, it.denom, it.unit, it.series, it.year, it.front, it.back, it.region, it.note, it.tag].join(' ').toLowerCase()
       if (!hay.includes(q)) return false
     }
     return true

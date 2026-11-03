@@ -58,7 +58,9 @@ The app starts empty — there is no built-in collection. Everything the user ad
 
 Item fields: `id, type ('note'|'coin'), country, cc, region, denom, unit, series, year (text),
 qty, lo, hi (EUR estimate each), face (exchange value each), status (legal|exch|demo|check),
-where, color, front, back, note, photos { front, back }, folders [], fav, created, updated`.
+where, color, front, back, note, tag, photos { front, back }, folders [], fav, created, updated`.
+`tag` (optional short text, e.g. "Special serial") is shown as an amber label on the top right of
+the card's picture, with an amber ring around the card; also in the detail panel, list and search.
 `cc`/`region` are derived from the country name (`src/data/countries.js`); `ys`/`dated` are
 derived at load time (`prepare()` in `src/lib/collection.js`) and not stored.
 
