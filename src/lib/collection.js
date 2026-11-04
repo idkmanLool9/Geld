@@ -85,7 +85,9 @@ function matchRank(it, q) {
   const qd = digits(q)
   const name = plain([it.denom, it.unit].filter(Boolean).join(' '))
   if (digits(it.denom) === qd || name === q) return 0 // exactly this denomination / name
-  if (digits(it.denom).startsWith(qd) || name.startsWith(q)) return 1 // denomination starts with it
+  // Denomination starts with it: the closest first ("2" → 2, then 20, then 200, then 2000).
+  if (qd && digits(it.denom).startsWith(qd)) return 1 + Math.min(digits(it.denom).length - qd.length, 9) / 10
+  if (name.startsWith(q)) return 1.95
   const main = [it.country, englishCountry(it.country), it.tag, it.series, it.unit]
   if (main.some((v) => plain(v).startsWith(q) || words(v).some((w) => w.startsWith(q)))) return 2
   const rest = [it.year, it.front, it.back, it.region, it.note]
