@@ -35,7 +35,7 @@ export default function App() {
   const [view, setView] = useState(readHash)
   const [type, setType] = useState(typeForView(readHash()))
   const [query, setQuery] = useState('')
-  const [sort, setSort] = useState('value')
+  const [sort, setSort] = useState('denom')
   const [show, setShow] = useState('all')
   const [layout, setLayout] = useState('grid')
   const [sel, setSel] = useState(null)

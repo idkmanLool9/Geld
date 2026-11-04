@@ -1,6 +1,6 @@
 import { range } from './format.js'
 import { canonicalCountry, englishCountry } from '../data/countries.js'
-import { currencyCode, exchangeInfo, legalTenderAdvice } from '../data/currencies.js'
+import { currencyCode, exchangeInfo, legalTenderAdvice, parseDenom } from '../data/currencies.js'
 
 // Texts the app once filled in automatically in English: replace them with the Dutch version.
 // Anything the user typed themselves is left alone.
@@ -106,6 +106,14 @@ export const SHOW_OPTIONS = [
 ]
 const SHOW = Object.fromEntries(SHOW_OPTIONS.map(([k, , st]) => [k, st]))
 
+/** The number on the note: "50.000" → 50000, "1M" → 1000000, "½" → 0.5; unknown → 0. */
+const FRACTIONS = { '½': 0.5, '¼': 0.25, '¾': 0.75 }
+function denomOf(it) {
+  const d = String(it.denom ?? '').trim()
+  if (FRACTIONS[d]) return FRACTIONS[d]
+  return parseDenom(d) || parseFloat(d.replace(',', '.')) || 0
+}
+
 /** A view is a string: 'home' | 'all' | 'notes' | 'coins' | 'favorites' | 'folder:<id>' | 'country:<name>' | 'decade:1990'. */
 export function filterItems(items, { view, type, query, sort, show = 'all' }) {
   const q = plain(query.trim())
@@ -130,11 +138,14 @@ export function filterItems(items, { view, type, query, sort, show = 'all' }) {
   const rank = q ? new Map(list.map((it) => [it, matchRank(it, q)])) : null
   list.sort((a, b) => {
     if (rank && rank.get(a) !== rank.get(b)) return rank.get(a) - rank.get(b)
-    if (sort === 'cash') return (b.face || 0) - (a.face || 0) || (b.hi || 0) - (a.hi || 0)
-    if (sort === 'country') return (a.country || '').localeCompare(b.country || '') || year(a) - year(b)
-    if (sort === 'year') return year(a) - year(b)
+    // Ties always fall back to the denomination, high to low (100 before 50 before 20).
+    const byDenom = denomOf(b) - denomOf(a) || (a.country || '').localeCompare(b.country || '', 'nl')
+    if (sort === 'denom') return byDenom
+    if (sort === 'cash') return (b.face || 0) - (a.face || 0) || byDenom
+    if (sort === 'country') return (a.country || '').localeCompare(b.country || '', 'nl') || denomOf(b) - denomOf(a)
+    if (sort === 'year') return year(a) - year(b) || byDenom
     if (sort === 'added') return (b.created || 0) - (a.created || 0)
-    return (b.hi || 0) - (a.hi || 0) || (b.created || 0) - (a.created || 0)
+    return (b.hi || 0) - (a.hi || 0) || (b.lo || 0) - (a.lo || 0) || byDenom
   })
   return list
 }

@@ -154,7 +154,8 @@ export default function ItemsView({ view, list, type, setType, sort, setSort, sh
         <label className="sort">
           Sorteren op
           <select value={sort} onChange={(e) => setSort(e.target.value)}>
-            <option value="value">Waarde</option>
+            <option value="denom">Nominale waarde (hoog → laag)</option>
+            <option value="value">Geschatte waarde</option>
             <option value="country">Land</option>
             <option value="year">Jaar</option>
             <option value="added">Laatst toegevoegd</option>
