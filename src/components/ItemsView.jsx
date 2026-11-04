@@ -4,7 +4,7 @@ import Flag from './Flag.jsx'
 import Icon from './Icon.jsx'
 import { FolderGraphic } from './Folder.jsx'
 import { STATUS } from '../data/meta.js'
-import { sumUp, valueLabel } from '../lib/collection.js'
+import { SHOW_OPTIONS, sumUp, valueLabel } from '../lib/collection.js'
 import { eur, range, plural } from '../lib/format.js'
 
 export function StatusPill({ status }) {
@@ -28,7 +28,7 @@ function Summary({ list, showValues }) {
       <div className="card summary-tile">
         <span className="muted small">Landen</span>
         <span className="summary-value">{st.nC}</span>
-        <span className="muted small">{plural(st.nR, 'region')}</span>
+        <span className="muted small">{plural(st.nR, 'regio', "regio's")}</span>
       </div>
       {showValues && (
         <>
@@ -123,7 +123,7 @@ function Table({ list, sel, showValues, onSelect }) {
   )
 }
 
-export default function ItemsView({ view, list, type, setType, sort, setSort, layout, setLayout, sel, select, showValues, query, onAdd, total, children }) {
+export default function ItemsView({ view, list, type, setType, sort, setSort, show, setShow, layout, setLayout, sel, select, showValues, query, onAdd, total, children }) {
   const empty = list.length === 0
   return (
     <>
@@ -142,15 +142,23 @@ export default function ItemsView({ view, list, type, setType, sort, setSort, la
         />
         <div className="grow" />
         <label className="sort">
+          Tonen
+          <select value={show} onChange={(e) => setShow(e.target.value)} className={show !== 'all' ? 'is-filtering' : undefined}>
+            {SHOW_OPTIONS.map(([k, label]) => (
+              <option key={k} value={k}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="sort">
           Sorteren op
           <select value={sort} onChange={(e) => setSort(e.target.value)}>
             <option value="value">Waarde</option>
             <option value="country">Land</option>
             <option value="year">Jaar</option>
             <option value="added">Laatst toegevoegd</option>
-            <option value="legal">Wettig betaalmiddel eerst</option>
-            <option value="exch">Inwisselbaar eerst</option>
-            <option value="cash">Wettig of inwisselbaar eerst</option>
+            <option value="cash">Geldwaarde</option>
           </select>
         </label>
         <Segmented
@@ -182,7 +190,9 @@ export default function ItemsView({ view, list, type, setType, sort, setSort, la
                     ? 'Open een stuk en tik op de ster om het hier te bewaren.'
                     : view.startsWith('folder:') && !query
                       ? 'Open een stuk, tik op Bewerken en vink deze map aan.'
-                      : 'Geen stukken in deze weergave. Kies een andere soort of wis de zoekopdracht.'}
+                      : show !== 'all'
+                        ? 'Geen stukken met deze status hier. Kies bij Tonen voor Alles.'
+                        : 'Geen stukken in deze weergave. Kies een andere soort of wis de zoekopdracht.'}
               </span>
               {total === 0 && (
                 <button type="button" className="primary-btn" onClick={onAdd}>

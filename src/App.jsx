@@ -36,6 +36,7 @@ export default function App() {
   const [type, setType] = useState(typeForView(readHash()))
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('value')
+  const [show, setShow] = useState('all')
   const [layout, setLayout] = useState('grid')
   const [sel, setSel] = useState(null)
 
@@ -255,7 +256,7 @@ export default function App() {
 
   // ----- Derived -----
   const countries = useMemo(() => getCountries(items), [items])
-  const list = useMemo(() => filterItems(items, { view, type, query, sort }), [items, view, type, query, sort])
+  const list = useMemo(() => filterItems(items, { view, type, query, sort, show }), [items, view, type, query, sort, show])
 
   const isHome = view === 'home'
   const isCountry = view.startsWith('country:')
@@ -392,6 +393,8 @@ export default function App() {
             setType={changeType}
             sort={sort}
             setSort={setSort}
+            show={show}
+            setShow={setShow}
             layout={layout}
             setLayout={setLayout}
             sel={sel}

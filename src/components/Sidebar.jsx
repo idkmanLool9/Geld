@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import Icon from './Icon.jsx'
 import Flag from './Flag.jsx'
 
@@ -13,8 +12,6 @@ function NavItem({ icon, label, count, active, onClick, children }) {
 }
 
 export default function Sidebar({ view, go, counts, folders, folderCounts, countries, onNewFolder }) {
-  const [more, setMore] = useState(false)
-  const shown = more ? countries : countries.slice(0, 8)
   const lib = [
     { key: 'home', icon: 'folder', label: 'Overzicht' },
     { key: 'all', icon: 'grid', label: 'Alle stukken', count: counts.all },
@@ -63,16 +60,11 @@ export default function Sidebar({ view, go, counts, folders, folderCounts, count
       {countries.length > 0 && (
         <div className="nav-group">
           <span className="nav-heading">Landen</span>
-          {shown.map((c) => (
+          {countries.map((c) => (
             <NavItem key={c.key} label={c.name} count={c.pieces} active={view === 'country:' + c.key} onClick={() => go('country:' + c.key)}>
               <Flag cc={c.cc} width={22} height={15} />
             </NavItem>
           ))}
-          {countries.length > 8 && (
-            <button type="button" className="nav-more" onClick={() => setMore(!more)}>
-              {more ? 'Minder tonen' : `Alle ${countries.length} tonen`}
-            </button>
-          )}
         </div>
       )}
     </nav>

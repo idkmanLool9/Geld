@@ -227,6 +227,7 @@ h1, h2, h3, p { margin: 0; }
 .summary-value { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; }
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .sort { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.sort select.is-filtering { border-color: var(--accent); color: var(--accent); font-weight: 600; }
 .sort select {
   min-height: 38px; padding: 0 10px; border: 1px solid #d2d2d7; border-radius: 10px; background: var(--surface);
   color: var(--text); font-size: 14px;
@@ -512,5 +513,4 @@ body.no-scroll { overflow: hidden; }
   .folder-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
   .nav-group { flex-direction: row; gap: 4px; }
   .nav-item { white-space: nowrap; min-height: 36px; padding: 0 10px; background: var(--surface); }
-  .nav-group:last-child .nav-item:nth-child(n + 6) { display: none; }
 }
