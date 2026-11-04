@@ -1,5 +1,5 @@
 import { range } from './format.js'
-import { canonicalCountry } from '../data/countries.js'
+import { canonicalCountry, englishCountry } from '../data/countries.js'
 import { currencyCode, exchangeInfo, legalTenderAdvice } from '../data/currencies.js'
 
 // Texts the app once filled in automatically in English: replace them with the Dutch version.
@@ -75,9 +75,27 @@ export function getCountries(items) {
     .sort((a, b) => b.pieces - a.pieces || a.name.localeCompare(b.name))
 }
 
+// Lowercase without accents, so "israel" finds Israël and "zloty" finds Złoty.
+const plain = (v) => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ł/g, 'l').toLowerCase()
+const digits = (v) => plain(v).replace(/[\s.,']/g, '')
+const words = (v) => plain(v).split(/[^\p{L}\p{N}]+/u).filter(Boolean)
+
+/** How well a piece matches the search: 0 = best. */
+function matchRank(it, q) {
+  const qd = digits(q)
+  const name = plain([it.denom, it.unit].filter(Boolean).join(' '))
+  if (digits(it.denom) === qd || name === q) return 0 // exactly this denomination / name
+  if (digits(it.denom).startsWith(qd) || name.startsWith(q)) return 1 // denomination starts with it
+  const main = [it.country, englishCountry(it.country), it.tag, it.series, it.unit]
+  if (main.some((v) => plain(v).startsWith(q) || words(v).some((w) => w.startsWith(q)))) return 2
+  const rest = [it.year, it.front, it.back, it.region, it.note]
+  if (rest.some((v) => words(v).some((w) => w.startsWith(q)))) return 3
+  return 4 // somewhere inside a word or number
+}
+
 /** A view is a string: 'home' | 'all' | 'notes' | 'coins' | 'favorites' | 'folder:<id>' | 'country:<name>' | 'decade:1990'. */
 export function filterItems(items, { view, type, query, sort }) {
-  const q = query.trim().toLowerCase()
+  const q = plain(query.trim())
   const list = items.filter((it) => {
     if (view === 'favorites' && !it.fav) return false
     if (view.startsWith('folder:') && !inFolder(it, view.slice(7))) return false
@@ -85,13 +103,19 @@ export function filterItems(items, { view, type, query, sort }) {
     if (view.startsWith('decade:') && !(it.dated && decadeOf(it) === +view.slice(7))) return false
     if (type !== 'all' && it.type !== type) return false
     if (q) {
-      const hay = [it.country, it.denom, it.unit, it.series, it.year, it.front, it.back, it.region, it.note, it.tag].join(' ').toLowerCase()
-      if (!hay.includes(q)) return false
+      const hay = plain([it.country, englishCountry(it.country), it.denom, it.unit, it.series, it.year, it.front, it.back, it.region, it.note, it.tag].join(' '))
+      // Numbers match with or without thousands separators: "1.000" = "1 000" = "1000".
+      const qd = digits(q)
+      const numeric = /^\d+$/.test(qd)
+      if (!hay.includes(q) && !(numeric && digits(it.denom).includes(qd))) return false
     }
     return true
   })
   const year = (it) => (it.ys == null ? 99999 : it.ys)
+  // While searching, the best matches come first ("1" → the 1 dollar notes before 100 or 1988).
+  const rank = q ? new Map(list.map((it) => [it, matchRank(it, q)])) : null
   list.sort((a, b) => {
+    if (rank && rank.get(a) !== rank.get(b)) return rank.get(a) - rank.get(b)
     if (sort === 'country') return (a.country || '').localeCompare(b.country || '') || year(a) - year(b)
     if (sort === 'year') return year(a) - year(b)
     if (sort === 'added') return (b.created || 0) - (a.created || 0)

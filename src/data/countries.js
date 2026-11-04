@@ -104,3 +104,8 @@ export function canonicalCountry(name) {
   const c = lookup(name)
   return c ? c.name : name
 }
+
+/** English name of a country typed in any known form (for searching), or ''. */
+export function englishCountry(name) {
+  return lookup(name)?.en || ''
+}
