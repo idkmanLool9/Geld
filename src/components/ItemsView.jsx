@@ -148,6 +148,9 @@ export default function ItemsView({ view, list, type, setType, sort, setSort, la
             <option value="country">Land</option>
             <option value="year">Jaar</option>
             <option value="added">Laatst toegevoegd</option>
+            <option value="legal">Wettig betaalmiddel eerst</option>
+            <option value="exch">Inwisselbaar eerst</option>
+            <option value="cash">Wettig of inwisselbaar eerst</option>
           </select>
         </label>
         <Segmented

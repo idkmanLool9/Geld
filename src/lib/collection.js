@@ -95,6 +95,10 @@ function matchRank(it, q) {
   return 4 // somewhere inside a word or number
 }
 
+// Sort options that put certain statuses first (in this order).
+// Each entry is a list of groups; statuses in the same group are sorted together.
+const STATUS_SORTS = { legal: [['legal'], ['exch']], exch: [['exch'], ['legal']], cash: [['legal', 'exch']] }
+
 /** A view is a string: 'home' | 'all' | 'notes' | 'coins' | 'favorites' | 'folder:<id>' | 'country:<name>' | 'decade:1990'. */
 export function filterItems(items, { view, type, query, sort }) {
   const q = plain(query.trim())
@@ -118,6 +122,14 @@ export function filterItems(items, { view, type, query, sort }) {
   const rank = q ? new Map(list.map((it) => [it, matchRank(it, q)])) : null
   list.sort((a, b) => {
     if (rank && rank.get(a) !== rank.get(b)) return rank.get(a) - rank.get(b)
+    if (STATUS_SORTS[sort]) {
+      // Chosen status group(s) first; inside a group the most money (exchange value) first, then estimate.
+      const g = (it) => {
+        const i = STATUS_SORTS[sort].findIndex((grp) => grp.includes(it.status))
+        return i === -1 ? 9 : i
+      }
+      return g(a) - g(b) || (b.face || 0) - (a.face || 0) || (b.hi || 0) - (a.hi || 0)
+    }
     if (sort === 'country') return (a.country || '').localeCompare(b.country || '') || year(a) - year(b)
     if (sort === 'year') return year(a) - year(b)
     if (sort === 'added') return (b.created || 0) - (a.created || 0)
